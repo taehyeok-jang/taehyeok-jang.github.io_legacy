@@ -279,3 +279,6 @@ AFS처럼 GFS에서는 snapshot을 구현하기 위해 copy-on-write technique�
 
 - https://courses.cs.washington.edu/courses/cse490h/11wi/CSE490H_files/gfs.pdf
 - https://cs.stanford.edu/~matei/courses/2015/6.S897/slides/gfs.pdf
+
+
+

@@ -284,3 +284,5 @@ MapReduce programming model은 Google에서 여러 목적을 위해 성공적으
 ## References
 
 - Jeffrey Dean, & Sanjay Ghemawat (2004). MapReduce: Simplified Data Processing on Large Clusters. In *OSDI'04: Sixth Symposium on Operating System Design and Implementation* (pp. 137–150).
+
+

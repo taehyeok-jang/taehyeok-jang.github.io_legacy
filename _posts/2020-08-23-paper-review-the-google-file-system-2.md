@@ -4,6 +4,7 @@ title: (Paper Review) The Google File System - 2
 subheading: 
 author: taehyeok-jang
 categories: [distributed-systems]
+
 tags: [paper-review, distributed-systems, file-system]
 --- 
 
@@ -44,7 +45,7 @@ chunk replica placemnet policy는 두가지 목적을 수행한다.
 - maximize data relibility
 - maximize network bandwidth utilization 
 
-이를 위해서 replica를 서로 다른 machine에 대해서만 복제하는 것은 충분하지 않다. 우리는 chunk replica를 rack에 걸쳐서 복제해두어야 한다. 이를 통해서 rack 전체가 실패했을 때도 대처가 가능하고 여러 rack에 걸쳐서 read traffic을 받을 수 있다. write traffic은 여러 rack에 걸쳐서 발생하지만 기꺼이 수용 가능한 tradeoff이다. 
+이를 위해서 replica를 서로 다른 machine에 대해서만 복제하는 것은 충분하지 않다. 우리는 chunk replica를 rack에 걸쳐서 복제해두어야 한다. 이를 통해서 rack 전체가 실패했을 때도 대처가 가능하고 여러 rack에 걸쳐서 read traffic을 받을 수 있다. write traffic은 여러 rack에 걸쳐서 발생하지만 기꺼이 수용 가능한 trade-off이다. 
 
 
 
