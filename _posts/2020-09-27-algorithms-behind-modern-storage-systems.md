@@ -128,22 +128,21 @@ B-Tree에서 WAL은 반드시 로그를 남긴 뒤에만 데이터 파일에 변
 
 ## Summary
 
-B-Tree와 LSM-Tree의 가장 큰 차이는 read/write 중 어떤 것에 최적화되었고 이 최적화에 의한 암시가 무엇인지다. 이 둘의 성질을 비교하면 아래와 같습니다.
+B-Tree와 LSM-Tree의 차이는 요약하자면 read/write 중 어떤 operation에 최적화 되어있고 이를 위해 각 시스템은 어떻게 동작하는지에 초점이 맞춰져 있습니다. 둘의 성질을 비교하면 아래와 같습니다.
 
 B-Tree.
 
+- read optimized
 - mutable 
-- read-optimized
 - write는 연쇄적인 (cascaded) node split을 발생시킬 수 있으며 이는 write operation을 더 무겁게 합니다
 - byte adressing이 불가능한 page environment (block storage)에 최적화 되어있습니다
 - 빈번한 update에 의한 fragmentation이 발생할 수 있으며 추가적인 maintenance와 block rewrite를 요구합니다. 하지만 LSM-Tree의 maintenance 보다 가볍습니다
-
 - concurrent access는 reader/writer isolation을 요구하며 lock, latch의 chain을 포함합니다
 
 LSM-Tree. 
 
-- immutable. disk에 한번 write 되면 절대 update 되지 않습니다. immutable에서 오는 장점 중 하나는 flush 된 table에 대해서 concurrent access가 가능하다는 점입니다
-- write-optimized
+- write optimized
+- immutable. 디스크에 한번 write 되면 절대 update 되지 않습니다. immutable에서 오는 장점 중 하나는 flush 된 table에 대해서 concurrent access가 가능하다는 점입니다
 - read는 여러 source (SSTable)을 거쳐야 하며 merge process를 거칠 수 있습니다
 - buffered write가 disk에 flush 되어야 하므로 maintenance/compaction이 요구됩니다
 
