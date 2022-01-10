@@ -7,11 +7,9 @@ categories: [database]
 tags: [paper-review, database, b-tree, lsm-tree]
 ---
 
-
+이 글은 Apache Cassandra의 commiter인 Alex Petrov가 작성한 논문 "Algorithms Behind Modern Storage Systems: Different uses for read-optimized B-trees and write-optimized LSM-trees"을 읽고 추가적으로 정리한 글입니다. 
 
 ## Introduction 
-
-이 글은 Apache Cassandra의 commiter인 Alex Petrov가 작성한 논문 "Algorithms Behind Modern Storage Systems: Different uses for read-optimized B-trees and write-optimized LSM-trees"을 읽고 추가적으로 정리한 글입니다. 
 
 어플리케이션으로부터 생성되는 데이터 양은 점점 증가하여 이를 저장하기 위한 storage를 확장하는 것은 더욱 도전적인 문제가 되었습니다. 각 데이터베이스 시스템은 성능 상 고유의 trade-off가 있기 때문에 그들의 원리를 잘 이해하고 사용하는 것은 중요합니다. 각 어플리케이션은 read/write 접근 패턴, 요구되는 일관성 수준과 latency 등이 상이하기 때문에 어플리케이션 설계 시 이들의 특성을 잘 이해하고 가장 최적화된 데이터베이스를 선택해야 합니다. 2020년 Stack Overflow Developer Survey에 따르면 주로 사용되는 데이터베이스로 관계형 데이터베이스인 MySQL, PostgreSQL부터 NoSQL 데이터베이스인 Cassandra 등 아주 다양합니다. 각각의 데이터베이스는 고유의 특성을 가지고 있지만 이들의 핵심 구동원리에 해당하는 자료구조는 세부 사항을 제외한다면 몇가지로 정해져있습니다. 그러므로 이 자료구조들을 잘 이해하고 있으면 각 데이터베이스의 원리와 특성에 대해서도 쉽게 알 수 있을 것입니다. 이번 글에서는 대부분의 현대 데이터베이스 시스템에서 사용되고 있는 두가지 큰 storage system인 B-Tree, LSM-Tree와 각각의 use case, trade-off를 알아보겠습니다.
 
