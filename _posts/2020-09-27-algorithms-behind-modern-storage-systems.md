@@ -27,7 +27,6 @@ B-Tree는 read optimized 자료구조로서 balanced binary tree의 확장된 �
 위 자료에서는 가장 기본적인 tree 자료구조인 binary tree부터 balanced tree인 red-black tree, 그리고 이들이 일반화된 형태인 2-3-4 tree, B-Tree를 다루고 있습니다. B-Tree는 node 당 지정된 개수의 link를 가진 balanced tree라고 할 수 있겠습니다. B-Tree를 개선한 B+ Tree는 inner node에는 데이터가 없고 external node(leaf node)에만 데이터를 저장하고 있습니다. 하나의 disk block에 더 많은 inner node를 배치할 수 있어 탐색 시 B-Tree에 비하여 더 적은 disk block을 읽으므로 B-Tree에 비해 상대적으로 나은 성능을 보입니다. 
 
 B-Tree의 성질은 다음과 같습니다.
-
 - Sorted
 - Self-balancing. insertion 시에 overflow 혹은 deletion 시에 일정 수준의 occupancy가 떨어지는 것을 확인하여 node 분할 혹은 합병합니다
 - Guarantee of logarithmic lookup time
@@ -49,14 +48,10 @@ sequential write를 허용하기 위해서, 즉 file system 상에서 write를 s
 
 [![img](https://1.bp.blogspot.com/-slWHSy63a3c/X3E2yPKWICI/AAAAAAAADow/0lghKH0dZLwzP5fM3O7eJq4ojtOL59aywCLcBGAsYHQ/w640-h180/lsm-tree-01.png)](https://1.bp.blogspot.com/-slWHSy63a3c/X3E2yPKWICI/AAAAAAAADow/0lghKH0dZLwzP5fM3O7eJq4ojtOL59aywCLcBGAsYHQ/s1430/lsm-tree-01.png)
 
-
-
 위 과정을 정리하면 다음과 같습니다. 
 
 1. 새로운 write를 memtable에 저장합니다
-
 2. memtable의 batch threshold를 초과하면, 디스크 상의 SSTable로 flush 합니다. 데이터가 디스크에 flush 되는 동안 새로운 write는 memtable에 계속 추가됩니다
-
 3. read 시에는 먼저 memtable을 찾아보고, 없으면 가장 최근의 SSTable부터 탐색합니다. 주어진 key에 해당하는 데이터는 여러 SSTable에 존재하는데 timestamp를 기반으로 저장 시점을 판단합니다
 4. read 시에 필요하다면 merge을 수행합니다
 
