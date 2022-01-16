@@ -13,11 +13,8 @@ tags: [paper-review, distributed-systems, file-system]
 master는 file system과 관련된 모든 system-wide한 동작들을 수행한다.
 
 - all namespace operations of files and directories
-
 - replica placement decision 
-
 - create, re-replicate, rebalance chunks
-
 - reclaim unused storage 
 
   

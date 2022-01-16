@@ -1,6 +1,6 @@
 ---
 layout: post
-title: (Paper Review) MapReduce Simplified Data Processing on Large Clusters
+title: (Paper Review) MapReduce - Simplified Data Processing on Large Clusters
 subheading: 
 author: taehyeok-jang
 categories: [distributed-systems]
