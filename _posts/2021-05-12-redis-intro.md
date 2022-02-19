@@ -150,6 +150,8 @@ Race condition + Context switching.
 파레토 법칙.
 20%의 사용자가 80%의 트래픽을 차지. 
 
+https://medium.com/system-design-blog/what-is-caching-1492abb92143
+
 
 
 ### Cache Strategy - Look Aside 
@@ -525,6 +527,8 @@ consistent hashing (twemproxy를 통해 쉽게 사용 가능)
   - https://smallake.kr/?p=17730
   - https://charsyam.wordpress.com/2016/10/02/입-개발-consistent-hashing-에-대한-기초/
 
-
-
-
+- Redis cluster 
+  - https://ssup2.github.io/theory_analysis/Redis_Master_Slave_Cluster/
+- Memory Segmentation 
+  - https://developer-mac.tistory.com/21
+  - https://jeong-pro.tistory.com/91
