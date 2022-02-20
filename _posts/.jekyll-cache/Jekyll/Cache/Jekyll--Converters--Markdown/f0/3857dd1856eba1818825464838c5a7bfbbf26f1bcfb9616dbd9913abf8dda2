@@ -1,0 +1,390 @@
+I"�<p>[toc]</p>
+
+<p>지난 글에서는 Kafka consumer에서 왜 동시처리가 필요한지, consumer 내 동시처리를 구현한 Confluent 사의 사례와 그 한계점에 대해서 알아보았습니다. 그리고 consumer의 성능을 최대로 하기 위해서는 결국 한 partition 내에서도 동시처리가 필요하다는 결론을 얻었습니다.</p>
+
+<p>이번 글에서는 Decaton에서 동일한 문제를 어떻게 접근하고 있는지, 단일 partition 내 동시처리 모델을 어떻게 구현했는지에 대해서 알아보겠습니다.</p>
+
+<h2 id="why-decaton">Why Decaton?</h2>
+
+<p>지난 글과 마찬가지로 I/O intensive한 task를 처리하는 consumer를 예를 들겠습니다. consumer에서는 task를 consumer하여 외부 시스템의 API를 호출합니다. 이 API 호출에 시간이 오래 소요되는 탓에 consumer group 내 각 consumer에서는 긴 wait time을 가지게 되고 이는 결국 전체적인 메시지 처리 성능 저하로 이어집니다. 만약 consumer group의 병렬성이 partition의 개수와 같고, 외부 시스템은 더 높은 빈도의 API 호출을 수용할 수 있다면 현재 시스템 상에서는 consumer group이 유일한 병목입니다. 이 문제를 시스템 운영 상의 관점으로 보면 아래와 같습니다.</p>
+
+<ul>
+  <li>사용자 문제
+    <ul>
+      <li>사용자가 혼자서 concurrency를 조정할 수 없습니다. 일반적으로 카프카 클러스터의 안정적 운영을 위해서는 적절한 정책과 capacity planning을 통해 시스템 관리자가 partition 개수를 조절합니다.</li>
+      <li>시스템의 초기에는 요구되는 concurrency를 측정하기가 어렵습니다. 하지만 partition은 축소시키는 것이 불가능하고 partition 수를 늘리는 것은 부작용이 야기합니다.</li>
+    </ul>
+  </li>
+  <li>시스템 관리자의 문제
+    <ul>
+      <li>더 많은 partition은 더많은 SW/HW 리소스를 사용합니다.</li>
+      <li>producer는 이전보다 더 작은 크기의 batch를 발생시키며 이는 broker 입장에서 비효율적입니다.</li>
+      <li>Kafka 1.1.0에서 아주 많은 수의 partition를 가지는 것에 대한 큰 개선이 있었지만, 여전히 partition은 replica assignment의 기본 단위이기 때문에 많은 수의 partition을 가지는 것은 reassignment 과정을 느리게 합니다.</li>
+    </ul>
+  </li>
+</ul>
+
+<p>Decaton은 위 문제를 해결하기 위해 다음과 같은 개선을 이루었습니다.</p>
+
+<ul>
+  <li>단일 partition 내 동시처리를 지원합니다
+    <ul>
+      <li>Sliding offset commit을 통해 동시처리에 따른 메시지 처리 누락을 방지합니다</li>
+      <li>동일한 key의 메시지들을 순서대로 처리하는 것을 보장합니다</li>
+    </ul>
+  </li>
+  <li>Dynamic property configuration으로 한 partition 내 concurrency를 동적으로 변경 가능합니다</li>
+</ul>
+
+<h2 id="offset-commit-coordination">Offset Commit Coordination</h2>
+
+<p>Decaton의 offset commit 전략을 알아보겠습니다. 단일 partition 내 동시처리를 가능하게 하기 위해서는 offset commit coordination이 필요합니다. Kafka의 offset commit은 watermark 방식으로 동작합니다. 예를 들어 5번 record를 commit 하면 이는 1~5번 record 모두 commit 하는 것입니다. 만약 1번 record를 처리하는 데 실패했거나 지연되고 있는데도 5번 record를 commit 한다면 1번 record가 처리되지 않고 유실될 수 있습니다. 단일 스레드 모델에서는 메시지들이 순차적으로 처리되기 때문에 상관 없지만, 여러 메시지들을 동시에 처리하는 동시처리 모델에서는 이 같은 일이 발생할 수 있습니다. 따라서 동시처리 모델에서 처리 결과를 보장하기 위해서는 5번 record를 commit 하기 전에 이전의 모든 record들이 처리가 완료된 것을 확인한 다음에 commit 해야 합니다.</p>
+
+<p>Decaton에서는 offset commit coordination을 위하여 sliding offeset range 방식을 사용했습니다. Decaton에서는 각 partition 별로 큐를 가지고 있으면서 각 메시지의 offset과 처리 완료 여부를 저장합니다. 그리고 주기적으로 commit을 시도할 때 큐의 가장 앞에 있는 offset부터 처리가 완료된 offset까지를 commit 합니다. 아래 그림을 통해 동작 방식을 이해해보겠습니다.</p>
+
+<p><img src="/Users/tajang12/Documents/workspace/taehyeok-jang.github.io/_posts/.assets/decaton-offset-commit-01-4801886.png" alt="decaton-offset-commit-01" /></p>
+
+<ol>
+  <li>1번 메시지가 추가되었습니다.</li>
+  <li>1번 메시지가 완료되었고 주기적 commit 시도 시에 commit 되어 큐에서 제거되었습니다.</li>
+</ol>
+
+<p><img src="/Users/tajang12/Documents/workspace/taehyeok-jang.github.io/_posts/.assets/decaton-offset-commit-02-4801892.png" alt="decaton-offset-commit-02" /></p>
+
+<ol>
+  <li>2~5번 메시지가 추가되었습니다.</li>
+  <li>3~5번 메시지가 완료되었지만 2번이 완료되지 않았기 때문에 주기적 commit 시도 시에 어떤 메시지도 commit 되지 않았습니다.</li>
+</ol>
+
+<p><img src="/Users/tajang12/Documents/workspace/taehyeok-jang.github.io/_posts/.assets/decaton-offset-commit-03-4801902.png" alt="decaton-offset-commit-03" /></p>
+
+<ol>
+  <li>6~7번 메시지가 추가되었고 2번 메시지가 완료되었습니다.</li>
+  <li>주기적 commit 시도 시에 2번 메시지와 함께 3~6번 메시지도 완료되었기 때문에 commit 되었습니다.</li>
+  <li>큐에는 7번 메시지만 남아 처리 중입니다.</li>
+</ol>
+
+<p>위 sliding offset range 동작 방식을 Decaton에서는 OutOfOrderCommitControl 클래스에서 dequeue을 활용하여 구현하였습니다.</p>
+
+<p>https://github.com/line/decaton/blob/master/processor/src/main/java/com/linecorp/decaton/processor/runtime/internal/OutOfOrderCommitControl.java#L90-L126</p>
+
+<h2 id="implementation">Implementation</h2>
+
+<h3 id="overall-design">Overall Design</h3>
+
+<p><img src="/Users/tajang12/Documents/workspace/taehyeok-jang.github.io/_posts/.assets/internal-queuing.png" alt="internal-queuing" /></p>
+
+<h3 id="decatonprocessor">DecatonProcessor</h3>
+
+<p>Decaton에서 구현한 consumer를 사용하려면 DecatonProcessor 인터페이스를 구현하여 instance 실행  시 consumer subscribe 및 초기화를 위한 클래스인 ProcessorSubsciption에 등록해야 합니다. 여러 프로세서를 등록하여 메시지를 파이프라인 방식으로 처리하거나 재시도를 위한 프로세서를 등록하여 fallback 처리할 수 있습니다.</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">class</span> <span class="nc">PrintMessageTaskProcessor</span> <span class="kd">implements</span> <span class="nc">DecatonProcessor</span><span class="o">&lt;</span><span class="nc">PrintMessageTask</span><span class="o">&gt;</span> <span class="o">{</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">process</span><span class="o">(</span><span class="nc">ProcessingContext</span><span class="o">&lt;</span><span class="nc">PrintMessageTask</span><span class="o">&gt;</span> <span class="n">context</span><span class="o">,</span> <span class="nc">PrintMessageTask</span> <span class="n">task</span><span class="o">)</span> <span class="kd">throws</span> <span class="nc">InterruptedException</span> <span class="o">{</span>
+        <span class="nc">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">printf</span><span class="o">(</span><span class="s">"Noticed %s is %d years old\n"</span><span class="o">,</span> <span class="n">task</span><span class="o">.</span><span class="na">getName</span><span class="o">(),</span> <span class="n">task</span><span class="o">.</span><span class="na">getAge</span><span class="o">());</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">ProcessorMain</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="nc">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="kd">throws</span> <span class="nc">Exception</span> <span class="o">{</span>
+        <span class="nc">Properties</span> <span class="n">consumerConfig</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">Properties</span><span class="o">();</span>
+        <span class="n">consumerConfig</span><span class="o">.</span><span class="na">setProperty</span><span class="o">(</span><span class="nc">ConsumerConfig</span><span class="o">.</span><span class="na">CLIENT_ID_CONFIG</span><span class="o">,</span> <span class="s">"my-decaton-processor"</span><span class="o">);</span>
+        <span class="n">consumerConfig</span><span class="o">.</span><span class="na">setProperty</span><span class="o">(</span><span class="nc">ConsumerConfig</span><span class="o">.</span><span class="na">BOOTSTRAP_SERVERS_CONFIG</span><span class="o">,</span>
+                                   <span class="nc">System</span><span class="o">.</span><span class="na">getProperty</span><span class="o">(</span><span class="s">"bootstrap.servers"</span><span class="o">));</span>
+        <span class="n">consumerConfig</span><span class="o">.</span><span class="na">setProperty</span><span class="o">(</span><span class="nc">ConsumerConfig</span><span class="o">.</span><span class="na">GROUP_ID_CONFIG</span><span class="o">,</span> <span class="s">"my-decaton-processor"</span><span class="o">);</span>
+
+        <span class="nc">ProcessorSubscription</span> <span class="n">subscription</span> <span class="o">=</span>
+                <span class="nc">SubscriptionBuilder</span><span class="o">.</span><span class="na">newBuilder</span><span class="o">(</span><span class="s">"my-decaton-processor"</span><span class="o">)</span> <span class="c1">// (1)</span>
+                                   <span class="o">.</span><span class="na">processorsBuilder</span><span class="o">(</span>
+                                           <span class="nc">ProcessorsBuilder</span><span class="o">.</span><span class="na">consuming</span><span class="o">(</span>
+                                                   <span class="s">"my-decaton-topic"</span><span class="o">,</span>
+                                                   <span class="k">new</span> <span class="nc">ProtocolBuffersDeserializer</span><span class="o">&lt;&gt;(</span><span class="nc">PrintMessageTask</span><span class="o">.</span><span class="na">parser</span><span class="o">()))</span>
+                                                            <span class="o">.</span><span class="na">thenProcess</span><span class="o">(</span><span class="k">new</span> <span class="nc">PrintMessageTaskProcessor</span><span class="o">())</span>
+                                   <span class="o">)</span>
+                                   <span class="o">.</span><span class="na">consumerConfig</span><span class="o">(</span><span class="n">consumerConfig</span><span class="o">)</span>
+                                   <span class="o">.</span><span class="na">buildAndStart</span><span class="o">();</span>
+
+        <span class="nc">Thread</span><span class="o">.</span><span class="na">sleep</span><span class="o">(</span><span class="mi">10000</span><span class="o">);</span>
+        <span class="n">subscription</span><span class="o">.</span><span class="na">close</span><span class="o">();</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<h3 id="processorsubscription">ProcessorSubscription</h3>
+
+<p>ProcessorSubscription는 topic을 subscribe하고, 메시지를 처리하기 위한 전체 과정을 담고 있는 class입니다.</p>
+
+<ol>
+  <li>프로세서를 실행하여 브로커로부터 partition이 할당되면 AssignmentManager를 통해 각 partition을 처리하기 위한 실행 컨텍스트인 PartitionContext를 생성합니다.</li>
+  <li>ConsumeManager는 메시지들을 poll하여 처리합니다.
+    <ol>
+      <li>각 메시지는 자신의 partition에 대응되는 PartitionContext 내에서 처리가 됩니다.</li>
+      <li>메시지들을 동기 혹은 비동기 방식으로 처리한 다음 각 PartitionContext는 high watermark를 업데이트합니다.</li>
+      <li>특정 partition에서 처리가 지연되는 상황에서는 메시지들을 더 가져와도 consume이 불가능합니다. ConsumerManager는 각 PartitionContext가 max.pending.records을 초과하는 레코드들을 처리하고 있으면 해당 partition은 다음 poll 때 메시지들을 가져오지 않도록 합니다.</li>
+    </ol>
+  </li>
+  <li>CommitManager는 마지막 commit으로부터 commit.interval.ms 만큼의 시간이 지나면 비동기 commit을 합니다. 각 partition 별로 commit 할 offset은 PartitionContext의 high watermark offset입니다.</li>
+  <li>Decaton에서 partition 별 동시</li>
+  <li>만약 partition.concurrency 값이 변경되었다면 해당 개수만큼 실행 컨텍스트를 다시 생성합니다.</li>
+</ol>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">class</span> <span class="nc">ProcessorSubscription</span> <span class="kd">extends</span> <span class="nc">Thread</span> <span class="kd">implements</span> <span class="nc">AsyncShutdownable</span> <span class="o">{</span>
+  <span class="nd">@Override</span> 
+  <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+    <span class="n">started</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+    <span class="k">try</span> <span class="o">{</span>
+      <span class="k">if</span> <span class="o">(!</span><span class="n">terminated</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">updateState</span><span class="o">(</span><span class="nc">SubscriptionStateListener</span><span class="o">.</span><span class="na">State</span><span class="o">.</span><span class="na">INITIALIZING</span><span class="o">);</span>
+        <span class="n">consumeManager</span><span class="o">.</span><span class="na">init</span><span class="o">(</span><span class="n">subscribeTopics</span><span class="o">());</span>
+        <span class="n">consumeLoop</span><span class="o">();</span> 
+      <span class="o">}</span>
+    <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+      <span class="n">loopTerminateFuture</span><span class="o">.</span><span class="na">complete</span><span class="o">(</span><span class="kc">null</span><span class="o">);</span>
+    <span class="o">}</span>
+  <span class="o">}</span>
+
+  <span class="kd">private</span> <span class="kt">void</span> <span class="nf">consumeLoop</span><span class="o">()</span> <span class="o">{</span>
+    <span class="k">try</span> <span class="o">{</span>
+      <span class="k">while</span> <span class="o">(!</span><span class="n">terminated</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">consumeManager</span><span class="o">.</span><span class="na">poll</span><span class="o">();</span>
+        <span class="n">contexts</span><span class="o">.</span><span class="na">maybeHandlePropertyReload</span><span class="o">();</span>
+
+        <span class="n">commitManager</span><span class="o">.</span><span class="na">maybeCommitAsync</span><span class="o">();</span>
+      <span class="o">}</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<h4 id="assignmentmanager">AssignmentManager</h4>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">class</span> <span class="nc">AssignmentManager</span> <span class="o">{</span>
+  
+  <span class="kd">private</span> <span class="kd">final</span> <span class="nc">AssignmentStore</span> <span class="n">store</span><span class="o">;</span>
+
+  <span class="kd">public</span> <span class="kt">void</span> <span class="nf">assign</span><span class="o">(</span><span class="nc">Collection</span><span class="o">&lt;</span><span class="nc">TopicPartition</span><span class="o">&gt;</span> <span class="n">newAssignment</span><span class="o">)</span> <span class="o">{</span>
+    <span class="nc">Set</span><span class="o">&lt;</span><span class="nc">TopicPartition</span><span class="o">&gt;</span> <span class="n">newSet</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">HashSet</span><span class="o">&lt;&gt;(</span><span class="n">newAssignment</span><span class="o">);</span>
+    <span class="nc">Set</span><span class="o">&lt;</span><span class="nc">TopicPartition</span><span class="o">&gt;</span> <span class="n">oldSet</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="na">assignedPartitions</span><span class="o">();</span>
+    <span class="nc">List</span><span class="o">&lt;</span><span class="nc">TopicPartition</span><span class="o">&gt;</span> <span class="n">removed</span> <span class="o">=</span> <span class="n">computeRemovedPartitions</span><span class="o">(</span><span class="n">oldSet</span><span class="o">,</span> <span class="n">newSet</span><span class="o">);</span>
+    <span class="nc">List</span><span class="o">&lt;</span><span class="nc">TopicPartition</span><span class="o">&gt;</span> <span class="n">added</span> <span class="o">=</span> <span class="n">computeAddedPartitions</span><span class="o">(</span><span class="n">oldSet</span><span class="o">,</span> <span class="n">newSet</span><span class="o">);</span>
+
+    <span class="n">partitionsRevoked</span><span class="o">(</span><span class="n">removed</span><span class="o">);</span>
+    <span class="n">partitionsAssigned</span><span class="o">(</span><span class="n">added</span><span class="o">);</span>
+  <span class="o">}</span>
+
+  <span class="kd">private</span> <span class="kt">void</span> <span class="nf">partitionsRevoked</span><span class="o">(</span><span class="nc">Collection</span><span class="o">&lt;</span><span class="nc">TopicPartition</span><span class="o">&gt;</span> <span class="n">partitions</span><span class="o">)</span> <span class="o">{</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">partitions</span><span class="o">.</span><span class="na">isEmpty</span><span class="o">())</span> <span class="o">{</span>
+      <span class="k">return</span><span class="o">;</span>
+    <span class="o">}</span>
+    <span class="n">store</span><span class="o">.</span><span class="na">removePartition</span><span class="o">(</span><span class="n">partitions</span><span class="o">);</span>
+  <span class="o">}</span>
+
+  <span class="kd">private</span> <span class="kt">void</span> <span class="nf">partitionsAssigned</span><span class="o">(</span><span class="nc">Collection</span><span class="o">&lt;</span><span class="nc">TopicPartition</span><span class="o">&gt;</span> <span class="n">partitions</span><span class="o">)</span> <span class="o">{</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">partitions</span><span class="o">.</span><span class="na">isEmpty</span><span class="o">())</span> <span class="o">{</span>
+      <span class="k">return</span><span class="o">;</span>
+    <span class="o">}</span>
+    <span class="nc">Map</span><span class="o">&lt;</span><span class="nc">TopicPartition</span><span class="o">,</span> <span class="nc">AssignmentConfig</span><span class="o">&gt;</span> <span class="n">configs</span> <span class="o">=</span>
+      <span class="n">partitions</span><span class="o">.</span><span class="na">stream</span><span class="o">().</span><span class="na">collect</span><span class="o">(</span><span class="n">toMap</span><span class="o">(</span><span class="nc">Function</span><span class="o">.</span><span class="na">identity</span><span class="o">(),</span> <span class="n">ignored</span> <span class="o">-&gt;</span> <span class="k">new</span> <span class="nc">AssignmentConfig</span><span class="o">(</span><span class="kc">false</span><span class="o">)));</span>
+    <span class="n">store</span><span class="o">.</span><span class="na">addPartitions</span><span class="o">(</span><span class="n">configs</span><span class="o">);</span>
+  <span class="o">}</span>
+
+<span class="o">}</span>
+</code></pre></div></div>
+
+<h4 id="consumemanager">ConsumeManager</h4>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">class</span> <span class="nc">ConsumeManager</span> <span class="kd">implements</span> <span class="nc">AutoCloseable</span> <span class="o">{</span>
+  <span class="kd">public</span> <span class="kt">void</span> <span class="nf">poll</span><span class="o">()</span> <span class="o">{</span>
+    <span class="nc">ConsumerRecords</span><span class="o">&lt;</span><span class="nc">String</span><span class="o">,</span> <span class="kt">byte</span><span class="o">[]&gt;</span> <span class="n">records</span> <span class="o">=</span> <span class="n">consumer</span><span class="o">.</span><span class="na">poll</span><span class="o">(</span><span class="no">POLL_TIMEOUT_MILLIS</span><span class="o">);</span>
+    <span class="n">records</span><span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="nl">handler:</span><span class="o">:</span><span class="n">receive</span><span class="o">);</span>
+
+    <span class="n">states</span><span class="o">.</span><span class="na">updatePartitionsStatus</span><span class="o">();</span>
+
+    <span class="n">pausePartitions</span><span class="o">(</span><span class="n">consumer</span><span class="o">);</span>
+    <span class="n">resumePartitions</span><span class="o">(</span><span class="n">consumer</span><span class="o">);</span>
+  <span class="o">}</span>
+
+  <span class="kd">public</span> <span class="kt">void</span> <span class="nf">init</span><span class="o">(</span><span class="nc">Collection</span><span class="o">&lt;</span><span class="nc">String</span><span class="o">&gt;</span> <span class="n">subscribeTopics</span><span class="o">)</span> <span class="o">{</span>
+    <span class="nc">Set</span><span class="o">&lt;</span><span class="nc">TopicPartition</span><span class="o">&gt;</span> <span class="n">pausedPartitions</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">HashSet</span><span class="o">&lt;&gt;();</span>
+    <span class="n">consumer</span><span class="o">.</span><span class="na">subscribe</span><span class="o">(</span><span class="n">subscribeTopics</span><span class="o">,</span> <span class="k">new</span> <span class="nc">ConsumerRebalanceListener</span><span class="o">()</span> <span class="o">{</span>
+      <span class="nd">@Override</span>
+      <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onPartitionsRevoked</span><span class="o">(</span><span class="nc">Collection</span><span class="o">&lt;</span><span class="nc">TopicPartition</span><span class="o">&gt;</span> <span class="n">partitions</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">consumerClosing</span><span class="o">.</span><span class="na">get</span><span class="o">())</span> <span class="o">{</span>
+          <span class="k">return</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="n">handler</span><span class="o">.</span><span class="na">prepareForRebalance</span><span class="o">();</span>
+        <span class="n">pausedPartitions</span><span class="o">.</span><span class="na">addAll</span><span class="o">(</span><span class="n">consumer</span><span class="o">.</span><span class="na">paused</span><span class="o">());</span>
+      <span class="o">}</span>
+
+      <span class="nd">@Override</span>
+      <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onPartitionsAssigned</span><span class="o">(</span><span class="nc">Collection</span><span class="o">&lt;</span><span class="nc">TopicPartition</span><span class="o">&gt;</span> <span class="n">partitions</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">handler</span><span class="o">.</span><span class="na">updateAssignment</span><span class="o">(</span><span class="n">partitions</span><span class="o">);</span>
+
+        <span class="n">pausedPartitions</span><span class="o">.</span><span class="na">retainAll</span><span class="o">(</span><span class="n">partitions</span><span class="o">);</span>
+        <span class="k">try</span> <span class="o">{</span>
+          <span class="n">consumer</span><span class="o">.</span><span class="na">pause</span><span class="o">(</span><span class="n">pausedPartitions</span><span class="o">);</span>
+        <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+          <span class="n">pausedPartitions</span><span class="o">.</span><span class="na">clear</span><span class="o">();</span>
+        <span class="o">}</span>
+      <span class="o">}</span>
+    <span class="o">});</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<h4 id="commitmanager">CommitManager</h4>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">class</span> <span class="nc">CommitManager</span> <span class="o">{</span> 
+  <span class="kd">public</span> <span class="kt">void</span> <span class="nf">maybeCommitAsync</span><span class="o">()</span> <span class="o">{</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">clock</span><span class="o">.</span><span class="na">millis</span><span class="o">()</span> <span class="o">-</span> <span class="n">lastCommittedMillis</span> <span class="o">&gt;=</span> <span class="n">commitIntervalMillis</span><span class="o">.</span><span class="na">value</span><span class="o">())</span> <span class="o">{</span>
+      <span class="k">try</span> <span class="o">{</span>
+        <span class="n">commitAsync</span><span class="o">();</span>
+      <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+        <span class="n">lastCommittedMillis</span> <span class="o">=</span> <span class="n">clock</span><span class="o">.</span><span class="na">millis</span><span class="o">();</span>
+      <span class="o">}</span>
+    <span class="o">}</span>
+  <span class="o">}</span>
+
+  <span class="kd">public</span> <span class="kt">void</span> <span class="nf">commitAsync</span><span class="o">()</span> <span class="o">{</span>
+    <span class="nc">Map</span><span class="o">&lt;</span><span class="nc">TopicPartition</span><span class="o">,</span> <span class="nc">OffsetAndMetadata</span><span class="o">&gt;</span> <span class="n">offsets</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="na">commitReadyOffsets</span><span class="o">();</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">offsets</span><span class="o">.</span><span class="na">isEmpty</span><span class="o">())</span> <span class="o">{</span>
+      <span class="k">return</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="k">if</span> <span class="o">(</span><span class="n">asyncCommitInFlight</span><span class="o">)</span> <span class="o">{</span>
+      <span class="k">return</span><span class="o">;</span>
+    <span class="o">}</span>
+    <span class="nc">Thread</span> <span class="n">callingThread</span> <span class="o">=</span> <span class="nc">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">();</span>
+    <span class="n">consumer</span><span class="o">.</span><span class="na">commitAsync</span><span class="o">(</span><span class="n">offsets</span><span class="o">,</span> <span class="o">(</span><span class="n">ignored</span><span class="o">,</span> <span class="n">exception</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="o">{</span>
+      <span class="n">asyncCommitInFlight</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+      <span class="k">if</span> <span class="o">(</span><span class="n">exception</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span><span class="o">;</span>
+      <span class="o">}</span>
+      <span class="k">if</span> <span class="o">(</span><span class="nc">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">()</span> <span class="o">!=</span> <span class="n">callingThread</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">log</span><span class="o">.</span><span class="na">error</span><span class="o">(</span><span class="s">"BUG: commitAsync callback triggered by an unexpected thread: {}."</span> <span class="o">+</span>
+                  <span class="s">" Please report this to Decaton developers"</span><span class="o">,</span> <span class="nc">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">());</span>
+        <span class="k">return</span><span class="o">;</span>
+      <span class="o">}</span>
+      <span class="n">store</span><span class="o">.</span><span class="na">storeCommittedOffsets</span><span class="o">(</span><span class="n">offsets</span><span class="o">);</span>
+    <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="nc">RuntimeException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+      <span class="n">log</span><span class="o">.</span><span class="na">error</span><span class="o">(</span><span class="s">"Unexpected exception caught while updating committed offset"</span><span class="o">,</span> <span class="n">e</span><span class="o">);</span>
+    <span class="o">}</span>
+                         <span class="o">});</span>
+    <span class="n">asyncCommitInFlight</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+  <span class="o">}</span>
+
+<span class="o">}</span>
+</code></pre></div></div>
+
+<h3 id="partitionprocessor">PartitionProcessor</h3>
+
+<ul>
+  <li>
+    <p>Create and manage configured number of {@link ProcessorUnit}s to parallel-ize processing of tasks received from single partition.</p>
+  </li>
+  <li>
+    <p>Route fed task appropriately to one of belonging {@link ProcessorUnit}s, respecting task’s key for keeping process locally and ordering.</p>
+  </li>
+  <li>
+    <p>Manage lifecycle of {@link DecatonProcessor}s for each {@link ProcessorUnit}s.</p>
+  </li>
+</ul>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">class</span> <span class="nc">PartitionProcessor</span> <span class="kd">implements</span> <span class="nc">AsyncShutdownable</span> <span class="o">{</span>
+  <span class="kd">private</span> <span class="kd">final</span> <span class="nc">PartitionScope</span> <span class="n">scope</span><span class="o">;</span>
+  <span class="kd">private</span> <span class="kd">final</span> <span class="nc">Processors</span><span class="o">&lt;?&gt;</span> <span class="n">processors</span><span class="o">;</span>
+  <span class="kd">private</span> <span class="kd">final</span> <span class="nc">List</span><span class="o">&lt;</span><span class="nc">ProcessorUnit</span><span class="o">&gt;</span> <span class="n">units</span><span class="o">;</span>
+  <span class="kd">private</span> <span class="kd">final</span> <span class="nc">SubPartitioner</span> <span class="n">subPartitioner</span><span class="o">;</span>
+
+  <span class="kd">private</span> <span class="kd">final</span> <span class="nc">RateLimiter</span> <span class="n">rateLimiter</span><span class="o">;</span>
+
+  <span class="kd">public</span> <span class="nf">PartitionProcessor</span><span class="o">(</span><span class="nc">PartitionScope</span> <span class="n">scope</span><span class="o">,</span> <span class="nc">Processors</span><span class="o">&lt;?&gt;</span> <span class="n">processors</span><span class="o">)</span> <span class="o">{</span>
+    <span class="k">this</span><span class="o">.</span><span class="na">scope</span> <span class="o">=</span> <span class="n">scope</span><span class="o">;</span>
+    <span class="k">this</span><span class="o">.</span><span class="na">processors</span> <span class="o">=</span> <span class="n">processors</span><span class="o">;</span>
+
+    <span class="kt">int</span> <span class="n">concurrency</span> <span class="o">=</span> <span class="n">scope</span><span class="o">.</span><span class="na">props</span><span class="o">().</span><span class="na">get</span><span class="o">(</span><span class="nc">ProcessorProperties</span><span class="o">.</span><span class="na">CONFIG_PARTITION_CONCURRENCY</span><span class="o">).</span><span class="na">value</span><span class="o">();</span>
+    <span class="n">units</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">ArrayList</span><span class="o">&lt;&gt;(</span><span class="n">concurrency</span><span class="o">);</span>
+    <span class="n">subPartitioner</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">SubPartitioner</span><span class="o">(</span><span class="n">concurrency</span><span class="o">);</span>
+    <span class="n">rateLimiter</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">DynamicRateLimiter</span><span class="o">(</span><span class="n">scope</span><span class="o">.</span><span class="na">props</span><span class="o">().</span><span class="na">get</span><span class="o">(</span><span class="nc">ProcessorProperties</span><span class="o">.</span><span class="na">CONFIG_PROCESSING_RATE</span><span class="o">));</span>
+    <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">concurrency</span><span class="o">;</span> <span class="n">i</span><span class="o">++)</span> <span class="o">{</span>
+      <span class="n">units</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">createUnit</span><span class="o">(</span><span class="n">i</span><span class="o">));</span>
+    <span class="o">}</span>
+
+    <span class="nc">ProcessorUnit</span> <span class="nf">createUnit</span><span class="o">(</span><span class="kt">int</span> <span class="n">threadId</span><span class="o">)</span> <span class="o">{</span>
+      <span class="nc">ThreadScope</span> <span class="n">threadScope</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">ThreadScope</span><span class="o">(</span><span class="n">scope</span><span class="o">,</span> <span class="n">threadId</span><span class="o">);</span>
+      <span class="nc">ExecutionScheduler</span> <span class="n">scheduler</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">ExecutionScheduler</span><span class="o">(</span><span class="n">threadScope</span><span class="o">,</span> <span class="n">rateLimiter</span><span class="o">);</span>
+
+      <span class="nc">TopicPartition</span> <span class="n">tp</span> <span class="o">=</span> <span class="n">scope</span><span class="o">.</span><span class="na">topicPartition</span><span class="o">();</span>
+      <span class="nc">ProcessPipeline</span><span class="o">&lt;?&gt;</span> <span class="n">pipeline</span> <span class="o">=</span> <span class="n">processors</span><span class="o">.</span><span class="na">newPipeline</span><span class="o">(</span><span class="n">threadScope</span><span class="o">,</span> <span class="n">scheduler</span><span class="o">,</span> <span class="n">metrics</span><span class="o">);</span>
+      <span class="k">return</span> <span class="k">new</span> <span class="nf">ProcessorUnit</span><span class="o">(</span><span class="n">threadScope</span><span class="o">,</span> <span class="n">pipeline</span><span class="o">);</span>
+    <span class="o">}</span>
+
+
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">addTask</span><span class="o">(</span><span class="nc">TaskRequest</span> <span class="n">request</span><span class="o">)</span> <span class="o">{</span>
+      <span class="kt">int</span> <span class="n">subPartition</span> <span class="o">=</span> <span class="n">subPartitioner</span><span class="o">.</span><span class="na">partitionFor</span><span class="o">(</span><span class="n">request</span><span class="o">.</span><span class="na">key</span><span class="o">());</span>
+      <span class="n">units</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">subPartition</span><span class="o">).</span><span class="na">putTask</span><span class="o">(</span><span class="n">request</span><span class="o">);</span>
+    <span class="o">}</span>
+  <span class="o">}</span>
+</code></pre></div></div>
+
+<h4 id="processorunit-processpipeline">ProcessorUnit, ProcessPipeline</h4>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">class</span> <span class="nc">ProcessorUnit</span> <span class="kd">implements</span> <span class="nc">AsyncShutdownable</span> <span class="o">{</span>
+  <span class="kd">private</span> <span class="kd">final</span> <span class="nc">ProcessPipeline</span><span class="o">&lt;?&gt;</span> <span class="n">pipeline</span><span class="o">;</span>
+  <span class="kd">private</span> <span class="kd">final</span> <span class="nc">ExecutorService</span> <span class="n">executor</span><span class="o">;</span>
+
+  <span class="kd">public</span> <span class="kt">void</span> <span class="nf">putTask</span><span class="o">(</span><span class="nc">TaskRequest</span> <span class="n">request</span><span class="o">)</span> <span class="o">{</span>
+    <span class="n">executor</span><span class="o">.</span><span class="na">execute</span><span class="o">(()</span> <span class="o">-&gt;</span> <span class="n">processTask</span><span class="o">(</span><span class="n">request</span><span class="o">));</span>
+  <span class="o">}</span>
+
+  <span class="kd">private</span> <span class="kt">void</span> <span class="nf">processTask</span><span class="o">(</span><span class="nc">TaskRequest</span> <span class="n">request</span><span class="o">)</span> <span class="o">{</span>
+    <span class="n">pipeline</span><span class="o">.</span><span class="na">scheduleThenProcess</span><span class="o">(</span><span class="n">request</span><span class="o">);</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">class</span> <span class="nc">ProcessPipeline</span><span class="o">&lt;</span><span class="no">T</span><span class="o">&gt;</span> <span class="kd">implements</span> <span class="nc">AutoCloseable</span> <span class="o">{</span>
+
+  <span class="kd">public</span> <span class="kt">void</span> <span class="nf">scheduleThenProcess</span><span class="o">(</span><span class="nc">TaskRequest</span> <span class="n">request</span><span class="o">)</span> <span class="kd">throws</span> <span class="nc">InterruptedException</span> <span class="o">{</span>
+        <span class="nc">OffsetState</span> <span class="n">offsetState</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="na">offsetState</span><span class="o">();</span>
+        <span class="kd">final</span> <span class="nc">DecatonTask</span><span class="o">&lt;</span><span class="no">T</span><span class="o">&gt;</span> <span class="n">extracted</span> <span class="o">=</span> <span class="n">extract</span><span class="o">(</span><span class="n">request</span><span class="o">);</span>
+
+        <span class="n">scheduler</span><span class="o">.</span><span class="na">schedule</span><span class="o">(</span><span class="n">extracted</span><span class="o">.</span><span class="na">metadata</span><span class="o">());</span>
+
+        <span class="nc">Completion</span> <span class="n">result</span> <span class="o">=</span> <span class="n">process</span><span class="o">(</span><span class="n">request</span><span class="o">,</span> <span class="n">extracted</span><span class="o">);</span>
+        <span class="n">offsetState</span><span class="o">.</span><span class="na">completion</span><span class="o">().</span><span class="na">completeWith</span><span class="o">(</span><span class="n">result</span><span class="o">);</span>
+        <span class="kt">long</span> <span class="n">timeoutMs</span> <span class="o">=</span> <span class="n">scope</span><span class="o">.</span><span class="na">props</span><span class="o">().</span><span class="na">get</span><span class="o">(</span><span class="nc">ProcessorProperties</span><span class="o">.</span><span class="na">CONFIG_DEFERRED_COMPLETE_TIMEOUT_MS</span><span class="o">).</span><span class="na">value</span><span class="o">();</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">timeoutMs</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="o">)</span> <span class="o">{</span>
+            <span class="kt">long</span> <span class="n">expireAt</span> <span class="o">=</span> <span class="n">clock</span><span class="o">.</span><span class="na">millis</span><span class="o">()</span> <span class="o">+</span> <span class="n">timeoutMs</span><span class="o">;</span>
+            <span class="n">offsetState</span><span class="o">.</span><span class="na">setTimeout</span><span class="o">(</span><span class="n">expireAt</span><span class="o">);</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<h2 id="internal-queueing-and-workers">Internal Queueing and Workers</h2>
+
+<h2 id="references">References</h2>
+
+<ul>
+  <li>https://github.com/line/decaton</li>
+  <li>https://www.confluent.io/blog/kafka-consumer-multi-threaded-messaging/</li>
+  <li>https://www.confluent.io/blog/introducing-confluent-parallel-message-processing-client/</li>
+  <li>https://www.confluent.io/blog/how-choose-number-topics-partitions-kafka-cluster/</li>
+  <li>https://kafka.apache.org</li>
+  <li>https://dzone.com/articles/kafka-topic-architecture-replication-failover-and</li>
+  <li>LINE Engineering Blog
+    <ul>
+      <li>https://engineering.linecorp.com/ko/blog/how-to-use-kafka-in-line-1/</li>
+      <li>https://engineering.linecorp.com/ko/blog/how-to-use-kafka-in-line-2/</li>
+      <li>https://engineering.linecorp.com/ko/blog/how-to-use-kafka-in-line-3/</li>
+      <li>https://engineering.linecorp.com/ko/blog/decaton-case-studies/</li>
+      <li>https://speakerdeck.com/line_devday2020/decaton-high-performance-task-processing-with-kafka?slide=16</li>
+    </ul>
+  </li>
+</ul>
+
+<p><a href="https://www.youtube.com/watch?v=lk27yiITOvU">TCP sliding window with error animation</a></p>
+
+:ET
