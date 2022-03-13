@@ -261,4 +261,5 @@ MySQL에서는 요청 서버와 데이터베이스 서버의 시간대, 그리�
 - [https://docs.oracle.com/javase/8/docs/api/java/time/package-summary.html](https://docs.oracle.com/javase/8/docs/api/java/time/package-summary.html)
 - [Naver D2 - Java의 날짜와 시간 API](https://d2.naver.com/helloworld/645609)
 - [https://en.wikipedia.org/wiki/ISO_8601](https://en.wikipedia.org/wiki/ISO_8601)
+- [https://dev.mysql.com/doc/connector-j/8.0/en/connector-j-time-instants.html](https://dev.mysql.com/doc/connector-j/8.0/en/connector-j-time-instants.html)
 
