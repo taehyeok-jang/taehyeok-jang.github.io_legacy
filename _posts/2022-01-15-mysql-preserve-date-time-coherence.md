@@ -158,7 +158,7 @@ Connector/J는 위 connectionTimeZone, forceConnectionTimeZoneToSession 변수�
 
 ### Soution 1. 
 
-![mysql_datetime_solution_1](https://user-images.githubusercontent.com/31732943/162183693-cb35327e-cfbd-4f08-9191-d3aa8172aedc.png)
+<img src="https://user-images.githubusercontent.com/31732943/162183693-cb35327e-cfbd-4f08-9191-d3aa8172aedc.png" alt="mysql_datetime_solution_1" style="zoom:67%;" />
 
 connectionTimeZone=LOCAL&forceConnectionTimeZoneToSession=false
 
@@ -175,7 +175,7 @@ connectionTimeZone=LOCAL&forceConnectionTimeZoneToSession=false
 
 ### Solution 2.
 
-![mysql_datetime_solution_2](https://user-images.githubusercontent.com/31732943/162183738-4dee6ff0-e82b-4051-a4d0-5c0927bdba2c.png)
+<img src="https://user-images.githubusercontent.com/31732943/162183738-4dee6ff0-e82b-4051-a4d0-5c0927bdba2c.png" alt="mysql_datetime_solution_2" style="zoom:67%;" />
 
 connectionTimeZone=LOCAL& forceConnectionTimeZoneToSession=true
 
@@ -196,7 +196,7 @@ connectionTimeZone=LOCAL& forceConnectionTimeZoneToSession=true
 
 ### Solution 3. 
 
-![mysql_datetime_solution_3](https://user-images.githubusercontent.com/31732943/162183757-8804eac3-49fa-46cf-8b9e-88284980b937.png)
+<img src="https://user-images.githubusercontent.com/31732943/162183757-8804eac3-49fa-46cf-8b9e-88284980b937.png" alt="mysql_datetime_solution_3" style="zoom: 67%;" />
 
 preserveInstants=true&connectionTimeZone=<user-defined-time-zone>& forceConnectionTimeZoneToSession=true
 
@@ -220,13 +220,9 @@ preserveInstants=true&connectionTimeZone=<user-defined-time-zone>& forceConnecti
 ## References
 
 - [https://dev.mysql.com/doc/refman/8.0/en/time-zone-support.html](https://dev.mysql.com/doc/refman/8.0/en/time-zone-support.html)
-
 - [https://dev.mysql.com/doc/connector-j/8.0/en/connector-j-time-instants.html](https://dev.mysql.com/doc/connector-j/8.0/en/connector-j-time-instants.html)
-
 - [https://dev.mysql.com/blog-archive/support-for-date-time-types-in-connector-j-8-0/](https://dev.mysql.com/blog-archive/support-for-date-time-types-in-connector-j-8-0/)
-
 - [https://phoenixnap.com/kb/change-mysql-time-zone](https://phoenixnap.com/kb/change-mysql-time-zone)
-
 - [https://dev.mysql.com/doc/connector-j/8.0/en/connector-j-connp-props-datetime-types-processing.html](https://dev.mysql.com/doc/connector-j/8.0/en/connector-j-connp-props-datetime-types-processing.html)
 
 
