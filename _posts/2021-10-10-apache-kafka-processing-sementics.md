@@ -1,10 +1,11 @@
 ---
 layout: post
-title: Apache Kafka - Processing Semantics 
+title: Apache Kafka - Processing Semantics
 subheading: 
 author: taehyeok-jang
 categories: [stream-processing]
-tags: [kafka]​
+tags: [kafka]
+
 ---
 
 
