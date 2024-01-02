@@ -10,13 +10,11 @@ tags: [kafka]
 
 
 
-이 글은 Apache Kafka의 공식 문서를 읽고 정리한 글입니다. 
+이 글은 [Apache Kafka 공식 문서](https://kafka.apache.org/intro)를 읽고 정리한 글입니다. 
 
 
 
 ## Introduction 
-
-[https://kafka.apache.org/intro](https://kafka.apache.org/intro)
 
 Kafka는 'distributed commit log' 또는 'distributed streaming platform'이라고 합니다. 
 
@@ -72,6 +70,6 @@ Kafka는 확장성이 좋아서 어떤 크기의 data도 쉽게 처리할 수 �
 
 ## References
 
-- images 
+- 이미지 
   - [https://www.javatpoint.com/kafka-topics](https://www.javatpoint.com/kafka-topics)
   - [https://blogs.sap.com/2021/03/16/cloud-integration-what-you-need-to-know-about-the-kafka-adapter/](https://blogs.sap.com/2021/03/16/cloud-integration-what-you-need-to-know-about-the-kafka-adapter/)
