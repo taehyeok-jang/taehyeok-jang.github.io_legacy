@@ -33,22 +33,28 @@ ClickHouse is an open source column-oriented distributed OLAP database, also ref
 ## Key Features 
 
 1. ANSI-compatible SQL
-    Most SQL-compatible UIs, editors, applications, frameworks will just work!
+
+Most SQL-compatible UIs, editors, applications, frameworks will just work!
 
 2. Lots of writes
-    Up to several million writes per second - in fact, we'll see 2.5M writes per second later!
+
+Up to several million writes per second - in fact, we'll see 2.5M writes per second later!
 
 3. Distributed
-    Replicated and sharded, largest known cluster consists of about 4,000 servers.
+
+Replicated and sharded, largest known cluster consists of about 4,000 servers.
 
 4. Highly efficient storage
-    Lots of encoding and compression options - we'll see 20x compression later.
+
+Lots of encoding and compression options - we'll see 20x compression later.
 
 5. Very fast queries
-    Scan and process even billions of rows per second and use vectorized query execution.
+
+Scan and process even billions of rows per second and use vectorized query execution.
 
 6. Joins and lookups
-    Allows separating fact and dimension tables in a star schema.
+
+Allows separating fact and dimension tables in a star schema.
 
 
 
@@ -57,9 +63,11 @@ ClickHouse is an open source column-oriented distributed OLAP database, also ref
 <img width="1322" alt="clickhouse-getting_started_with_03" src="https://github.com/taehyeok-jang/taehyeok-jang.github.io/assets/31732943/8aa03a01-9a69-494c-b4ba-41bc2f1db4ad">
 
 - Distributed mode 
+
 ClickHouse supports both shard and replication across a distributed cluster. 
 
 - Coordination
+
 ClickHouse Keeper provides the coordination system for data replication and distributed DDL queries execution. ClickHouse Keeper is compatible with ZooKeeper.
 ClickHouse Keeper uses the RAFT algorithm implementation, similar to Kafka broker's RAFT implementation. 
 
@@ -114,7 +122,6 @@ Some MergeTree families such as ReplacingMergeTree, SummingMergeTree, Aggregatin
 
 
 MergeTree has the same core idea as LSM-Tree, to solve the performance problem of random disk writing.
-
 MergeTree storage structure sorts the written data first and then stores it. Orderly data storage has two core advantages:
 
 - When column-store files are compressed by blocks, the column values in the sort key are continuous or repeated, so t**he column-store blocks can be compressed at an excellent data compression ratio.**
@@ -155,7 +162,8 @@ The following figure shows the MergeTree storage structure logic of the table:
 A single partition contains multiple MergeTree Data Parts. In the storage structure of the MergeTree table, **each data partition is independent of each other with no logical connections.**
 
 - Data Part
-  A new MergeTree Data Part is generated for each batch insert operation.
+
+A new MergeTree Data Part is generated for each batch insert operation.
 
 Once these Data Parts are generated, they are immutable. The generation and destruction of Data Parts are mainly related **to writing and asynchronous Merge (compaction).**
 
@@ -317,13 +325,13 @@ https://clickhouse.com/docs/en/about-us/adopters
 ## Reference
 
 - Apache HBase, Google BigTable 
-  - https://data-flair.training/blogs/hbase-architecture/
-  - https://www.slideshare.net/quipo/nosql-databases-why-what-and-when/127-Google_BigTable_Architecture_fs_metadata
+  - [https://data-flair.training/blogs/hbase-architecture/](https://data-flair.training/blogs/hbase-architecture/)
+  - [https://www.slideshare.net/quipo/nosql-databases-why-what-and-when/127-Google_BigTable_Architecture_fs_metadata](https://www.slideshare.net/quipo/nosql-databases-why-what-and-when/127-Google_BigTable_Architecture_fs_metadata)
 - ClickHouse doc
-  - https://clickhouse.com/docs/en/home/
-  - https://clickhouse.com/docs/en/faq/general/why-clickhouse-is-so-fast/
-  - https://www.alibabacloud.com/blog/clickhouse-kernel-analysis-storage-structure-and-query-acceleration-of-mergetree_597727
-  - https://clickhouse.com/company/events/getting-started-with-clickhouse
+  - [https://clickhouse.com/docs/en/home/](https://clickhouse.com/docs/en/home/)
+  - [https://clickhouse.com/docs/en/faq/general/why-clickhouse-is-so-fast/](https://clickhouse.com/docs/en/faq/general/why-clickhouse-is-so-fast/)
+  - [https://www.alibabacloud.com/blog/clickhouse-kernel-analysis-storage-structure-and-query-acceleration-of-mergetree_597727](https://www.alibabacloud.com/blog/clickhouse-kernel-analysis-storage-structure-and-query-acceleration-of-mergetree_597727)
+  - [https://clickhouse.com/company/events/getting-started-with-clickhouse](https://clickhouse.com/company/events/getting-started-with-clickhouse)
 
 - Conferences 
   - [Secrets of ClickHouse Query Performance](https://www.youtube.com/watch?v=6WICfakG84c)
@@ -335,25 +343,16 @@ https://clickhouse.com/docs/en/about-us/adopters
 
 ### Additional Ref 
 
-https://clickhouse.com/docs/en/concepts/why-clickhouse-is-so-fast
-
-https://altinity.com/blog/2020/1/1/clickhouse-cost-efficiency-in-action-analyzing-500-billion-rows-on-an-intel-nuc
-
-http://www.cs.columbia.edu/~kar/pubsk/simd.pdf
-
-https://www.sciencedirect.com/topics/computer-science/single-instruction-multiple-data
-
-- ClickHouse string field disk usage: null vs empty
-
-https://stackoverflow.com/questions/63057886/clickhouse-string-field-disk-usage-null-vs-empty
+- [https://clickhouse.com/docs/en/concepts/why-clickhouse-is-so-fast](https://clickhouse.com/docs/en/concepts/why-clickhouse-is-so-fast)
+- [https://altinity.com/blog/2020/1/1/clickhouse-cost-efficiency-in-action-analyzing-500-billion-rows-on-an-intel-nuc](https://altinity.com/blog/2020/1/1/clickhouse-cost-efficiency-in-action-analyzing-500-billion-rows-on-an-intel-nuc)
+- [http://www.cs.columbia.edu/~kar/pubsk/simd.pdf](http://www.cs.columbia.edu/~kar/pubsk/simd.pdf)
+- [https://www.sciencedirect.com/topics/computer-science/single-instruction-multiple-data](https://www.sciencedirect.com/topics/computer-science/single-instruction-multiple-data)
 
 - Blog 
+  - [https://clickhouse.com/blog/introduction-to-the-clickhouse-query-cache-and-design](https://clickhouse.com/blog/introduction-to-the-clickhouse-query-cache-and-design)
+  - [https://clickhouse.com/blog/using-ttl-to-manage-data-lifecycles-in-clickhouse](https://clickhouse.com/blog/using-ttl-to-manage-data-lifecycles-in-clickhouse)
+  - [https://clickhouse.com/blog/data-formats-clickhouse-csv-tsv-parquet-native](https://clickhouse.com/blog/data-formats-clickhouse-csv-tsv-parquet-native)
 
-https://clickhouse.com/blog/introduction-to-the-clickhouse-query-cache-and-design
-
-https://clickhouse.com/blog/using-ttl-to-manage-data-lifecycles-in-clickhouse
-
-https://clickhouse.com/blog/data-formats-clickhouse-csv-tsv-parquet-native
 
 
 
