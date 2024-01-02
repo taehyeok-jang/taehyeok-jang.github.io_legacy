@@ -32,27 +32,27 @@ ClickHouse is an open source column-oriented distributed OLAP database, also ref
 
 ## Key Features 
 
-1. ANSI-compatible SQL
+- ANSI-compatible SQL
 
 Most SQL-compatible UIs, editors, applications, frameworks will just work!
 
-2. Lots of writes
+- Lots of writes
 
 Up to several million writes per second - in fact, we'll see 2.5M writes per second later!
 
-3. Distributed
+- Distributed
 
 Replicated and sharded, largest known cluster consists of about 4,000 servers.
 
-4. Highly efficient storage
+- Highly efficient storage
 
 Lots of encoding and compression options - we'll see 20x compression later.
 
-5. Very fast queries
+- Very fast queries
 
 Scan and process even billions of rows per second and use vectorized query execution.
 
-6. Joins and lookups
+- Joins and lookups
 
 Allows separating fact and dimension tables in a star schema.
 
@@ -337,7 +337,7 @@ https://clickhouse.com/docs/en/about-us/adopters
   - [Secrets of ClickHouse Query Performance](https://www.youtube.com/watch?v=6WICfakG84c)
   - [The Secrets of ClickHouse Performance Optimizations at BDTC 2019](https://www.youtube.com/watch?v=ZOZQCQEtrz8)
   - [Introducing ClickHouse -- The Fastest Data Warehouse You've Never Heard Of (Robert Hodges, Altinity)](https://www.youtube.com/watch?v=fGG9dApIhDU)
-  - [A Day in the Life of a ClickHouse Query — Intro to ClickHouse Internals | ClickHouse Tutorial](https://www.youtube.com/watch?v=XpkFEj1rVXg)
+  - [A Day in the Life of a ClickHouse Query — Intro to ClickHouse Internals ClickHouse Tutorial](https://www.youtube.com/watch?v=XpkFEj1rVXg)
 
 
 
