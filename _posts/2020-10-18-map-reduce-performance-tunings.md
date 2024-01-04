@@ -13,13 +13,15 @@ tags: [paper-review, distributed-systems, map-reduce]
 
 [(Paper Review) MapReduce - Simplified Data Processing on Large Clusters](https://taehyeok-jang.github.io/distributed-systems/2020/08/09/paper-review-map-reduce.html)
 
-이전에 업로드한 위 글을 통해서 Google의 MapReduce에 대해서 알아보았습니다. Google에서는 MapReduce를 오픈소스로 공개하지 않았기 때문에 대용량 data processing이 필요한 회사들은 Hadoop ecosystem에 있는 MapReduce framework를 사용했습니다. 
-
-이번 글에서는 MapReduce 작업을 수행할 때 성능 및 정합성 측면에서 고려하는 요소를 살펴보고자 합니다.
+이전에 위 논문을 리뷰하면서 Google의 MapReduce에 대해서 알아보았습니다. MapReduce 어플리케이션은 대량의 데이터를 처리하기에 수행 성능 및 처리 결과에 대해서 반드시 유의해야 합니다. 이번 글에서는 MapReduce 작업을 수행할 때 작업 성능 및 데이터 정합성에 영향을 미치는 몇가지 설정들을 알아보고자 합니다. 
 
 
 
 ## Speculative Execution 
+
+speculative execution은 MapReduce 수행 도중 특정 worker node에서 task 수행이 지연되고 있으면 해당 task와 동일한 backup task를 실행시키는 것을 허용하는 설정입니다.  MapReduce Job 클래스에서 작업 실행 전 speculative execution 여부를 설정할 수 있습니다. 
+
+[https://hadoop.apache.org/docs/r1.2.1/api/org/apache/hadoop/mapreduce/Job.html](https://hadoop.apache.org/docs/r1.2.1/api/org/apache/hadoop/mapreduce/Job.html)
 
 ```
 /**
@@ -34,19 +36,13 @@ public void setSpeculativeExecution(boolean speculativeExecution) {
 }
 ```
 
-MapReduce job class의 설정으로 speculative execution 옵션이 있습니다. 이 옵션은 MapReduce 수행 도중 특정 worker node에서 task 수행이 지연되고 있으면 해당 task와 동일한 backup task를 실행시키는 것을 허용합니다. 
-
-Google MapReduce 논문의 목차 3.6에서 해당 내용을 기술하고 있습니다. 
-
-
+Google MapReduce 논문에는 다음과 같이 설명하고 있습니다.
 
 > ### 3.6 Backup Tasks
 >
 > MapReduce의 수행시간을 길게하는 원인 중 하나로 **straggler가 있다.** straggler는 소수의 map task 혹은 reduce task를 수행하는 데 비정상적으로 긴 시간을 소요하는 machine을 의미한다. straggler는 여러 이유에서 발생한다. bad disk, scheduling으로 인한 CPU, memory, disk, network bandwidth 등 자원의 경합이 될 수 있다. 최근에 발견한 bug로는 processor cache를 disable 시키는 initialization code도 있었다.
 >
-> 이러한 straggler로 인한 문제를 완화하기 위해서 **general mechanism**을 도입하였다. MapReduce operation이 수행 완료에 가까워지면 master는 남아있는 in-progress task에 대한 backup execution을 schedule 한다. 그러면 그 task는 primary 혹은 backup execution에서 완료하게 된다. 논문에서는 이 mechanism을 tune 하여 수 percent의 추가 자원을 사용하면서 수행 완료시간을 상당히 줄이는 결과를 얻었다.
-
-
+> 이러한 straggler로 인한 문제를 완화하기 위해서 **general mechanism**을 도입하였다. **MapReduce operation이 수행 완료에 가까워지면 master는 남아있는 in-progress task에 대한 backup execution을 schedule 한다.** 그러면 그 task는 primary 혹은 backup execution에서 완료하게 된다. 논문에서는 이 mechanism을 tune 하여 수 percent의 추가 자원을 사용하면서 수행 완료시간을 상당히 줄이는 결과를 얻었다.
 
 논문에서는 speculative execution을 활성화시킴으로써 부분 실패에 대한 작업 지연을 미리 예방하여 성능 향상에 기여한다고 이야기하고 있습니다. 
 
@@ -60,21 +56,17 @@ Enterprise Hadoop cluster 환경에서는 다수의 MapReduce 작업이 한 clus
 
 ## Table Scan 
 
-MapReduce 를 활용한 작업 중에서는 저장소에 있는 데이터를 읽어서 연산을 하는 경우도 있을 것입니다. 이때 대량의 데이터를 scan하는 경우 저장소가 감당하지 못할 부하가 발생할 수도 있기 때문에 이와 관련된 제어는 반드시 필요합니다. 이번 글에서는 Hadoop HBase를 예로 들겠지만 scan caching 및 batch와 관련된 제어는 다른 데이터베이스에도 동일한 원리를 가지고 최적화 할 수 있을 것이라 기대합니다.
+MapReduce 를 활용한 작업 중에서는 저장소에 있는 데이터를 읽어서 연산을 하는 경우도 있습니다. 이때 대량의 데이터를 scan하는 경우 MapReduce 내 클라이언트 프로세스 혹은 저장소에 부하가 발생할 수도 있기 때문에 이와 관련된 제어는 반드시 필요합니다. 이 글에서는 Hadoop HBase를 사용한 예시를 들겠지만, scan caching 및 batch와 관련된 제어는 다른 데이터베이스에도 동일한 원리로 최적화할 수 있을 것이라 기대합니다.
 
 
 
-### Block Cache
+### Cache Block 
 
 [https://hbase.apache.org/1.1/apidocs/org/apache/hadoop/hbase/client/Scan.html](https://hbase.apache.org/1.1/apidocs/org/apache/hadoop/hbase/client/Scan.html)
 
 ```
-- getCacheBlocks
-public boolean getCacheBlocks()
-
-Get whether blocks should be cached for this Scan.
-
 - setCacheBlocks
+
 public Scan setCacheBlocks(boolean cacheBlocks)
 
 Set whether blocks should be cached for this Scan.
@@ -169,6 +161,9 @@ private static void scan(int caching, int batch) throws IOException {
 
 ## References
 
+- Apache Hadoop MapReduce 
+  - [https://github.com/apache/hadoop-mapreduce/blob/307cb5b316e10defdbbc228d8cdcdb627191ea15/src/java/org/apache/hadoop/mapreduce/Job.java#L778-L780](https://github.com/apache/hadoop-mapreduce/blob/307cb5b316e10defdbbc228d8cdcdb627191ea15/src/java/org/apache/hadoop/mapreduce/Job.java#L778-L780)
+  - [https://hadoop.apache.org/docs/r1.2.1/api/org/apache/hadoop/mapreduce/Job.html](https://hadoop.apache.org/docs/r1.2.1/api/org/apache/hadoop/mapreduce/Job.html)
 - Apache HBase 
   - [https://hbase.apache.org/1.1/apidocs/org/apache/hadoop/hbase/client/Scan.html](https://hbase.apache.org/1.1/apidocs/org/apache/hadoop/hbase/client/Scan.html)
   - [HBase: The Definitive Guide](https://www.oreilly.com/library/view/hbase-the-definitive/9781449314682/)
