@@ -1,12 +1,12 @@
 ---
 layout: post
-title: (Paper Review) The Google File System - 2
+title: (Paper Review) The Google File System - Part 2
 subheading: 
 author: taehyeok-jang
 categories: [distributed-systems]
-
 tags: [paper-review, distributed-systems, file-system]
---- 
+---
+
 
 ##  4. Master Operation 
 

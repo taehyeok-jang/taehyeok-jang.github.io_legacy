@@ -1,6 +1,6 @@
 ---
 layout: post
-title: ClickHouse - Inside ClickHouse 
+title: ClickHouse - Clickhouse Internal  
 subheading: 
 author: taehyeok-jang
 categories: [database]
@@ -352,7 +352,6 @@ https://clickhouse.com/docs/en/about-us/adopters
   - [https://clickhouse.com/blog/introduction-to-the-clickhouse-query-cache-and-design](https://clickhouse.com/blog/introduction-to-the-clickhouse-query-cache-and-design)
   - [https://clickhouse.com/blog/using-ttl-to-manage-data-lifecycles-in-clickhouse](https://clickhouse.com/blog/using-ttl-to-manage-data-lifecycles-in-clickhouse)
   - [https://clickhouse.com/blog/data-formats-clickhouse-csv-tsv-parquet-native](https://clickhouse.com/blog/data-formats-clickhouse-csv-tsv-parquet-native)
-
 
 
 
