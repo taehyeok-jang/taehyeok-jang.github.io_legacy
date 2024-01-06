@@ -1,6 +1,6 @@
 ---
 layout: post
-title: ClickHouse - Clickhouse Internal  
+title: Clickhouse Internal  
 subheading: 
 author: taehyeok-jang
 categories: [database]
