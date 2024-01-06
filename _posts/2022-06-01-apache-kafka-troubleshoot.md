@@ -4,11 +4,11 @@ title: Apache Kafka - Troubleshoot
 subheading: 
 author: taehyeok-jang
 categories: [stream-processing]
-tags: [kafka]
+tags: [kafka, troubleshoot]
 
 ---
 
-
+ 
 
 이 글은 Apache Kafka를 사용하면서 발생할 수 있는 문제들과 그 해결책에 대해서 정리한 글입니다. 
 
@@ -107,7 +107,7 @@ heartbeat와 관련된 문제에서도 주의가 필요합니다. consumer 어�
 - Kafka Internal 
   - [KafkaConsumer Client Internals - NAVER D2](https://d2.naver.com/helloworld/0974525)
 - Problems in Producer 
-  - [Kafka producer fails to send messages with NOT_LEADER_FOR_PARTITION exception - Stackoverflow](https://stackoverflow.com/questions/61798565/kafka-producer-fails-to-send-messages-with-not-leader-for-partition-exception)
+  - [Stack Overflow - Kafka producer fails to send messages with NOT_LEADER_FOR_PARTITION exception](https://stackoverflow.com/questions/61798565/kafka-producer-fails-to-send-messages-with-not-leader-for-partition-exception)
 - Problems in Consumer 
   - [https://www.confluent.io/blog/kafka-lag-monitoring-and-metrics-at-appsflyer/](https://www.confluent.io/blog/kafka-lag-monitoring-and-metrics-at-appsflyer/)
   - [https://github.com/ClickHouse/ClickHouse/issues/44884](https://github.com/ClickHouse/ClickHouse/issues/44884)
