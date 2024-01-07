@@ -14,7 +14,7 @@ tags: [kafka, troubleshoot]
 
 
 
-## Problems in Producer
+## Producer에서 발생하는 문제 
 
 ### NotLeaderForPartitionException: This server is not the leader for that topic-partition.. Going to request metadata update now 
 
@@ -44,7 +44,7 @@ Kafka producer에서 produce 및 fetch 요청은 partition의 leader replica로 
 
 
 
-## Problems in Consumer 
+## Consumer에서 발생하는 문제 
 
 ### CommitFailedException: Commit cannot be completed since the group has already rebalanced and assigned the partitions to another member
 

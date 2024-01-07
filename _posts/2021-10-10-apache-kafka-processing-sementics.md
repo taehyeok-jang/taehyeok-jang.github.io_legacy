@@ -56,11 +56,11 @@ It can read the messages, process the messages, and finally save its position
 
 
 
-## Exactly Once
+## Exactly-Once
 
 Apache Kafka에서 'exactly-once' 처리는 메시지를 전송하거나 처리할 때 중복 없이 단 한 번만 성공적으로 수행되도록 보장하는 것을 의미합니다. 이것은 데이터 파이프라인에서 중요한 속성이며, 데이터 손실이나 중복을 방지하여 결과의 정확성을 보장합니다. Kafka는 0.11 버전부터 이 기능을 지원하기 시작했습니다.
 
-### Exactly-Once 처리의 구성 요소
+### Exactly-Once의 구성 요소
 
 Idempotent Producer:
 
@@ -81,7 +81,7 @@ Consumer의 Exactly-Once 처리:
 
 
 
-### Exactly-Once 처리의 동작 방식
+### Exactly-Once의 동작 방식
 
 1. producer는 트랜잭션을 시작하고, 여러 메시지를 여러 patitions과 topic에 걸쳐 보냅니다.
 2. 모든 메시지가 성공적으로 보내지면, producer는 transaction을 커밋합니다.
