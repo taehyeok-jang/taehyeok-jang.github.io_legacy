@@ -17,7 +17,9 @@ tags: [kafka]
 
 ![ingest-data-upstream-systems](https://github.com/taehyeok-jang/taehyeok-jang.github.io/assets/31732943/1262f09a-5c1f-49b5-b5b3-1538c196112d)
 
-![kafka_connect_architecture](/Users/jth/Desktop/Screenshot/kafka_connect_architecture.png)
+![kafka_connect_architecture](https://github.com/taehyeok-jang/taehyeok-jang.github.io/assets/31732943/3bbde458-0427-4c7b-ba60-b743a3bc747b)
+
+
 
 Kafka Connect는 Apache Kafka의 컴포넌트들 중 하나로, database, 클라우드 서비스, 검색 인덱스, 파일 시스템, 키-값 저장소와 같은 다른 시스템과의 streaming을 수행하는 데 사용됩니다.
 
@@ -195,7 +197,7 @@ curl --request POST 'localhost:8083/connectors' \
 
 파일에 텍스트를 입력합니다.
 
-```java
+```shell
 > echo hello >> test.txt
 > echo world >> test.txt
 > echo !!! >> test.txt
@@ -206,7 +208,7 @@ curl --request POST 'localhost:8083/connectors' \
 
 데이터가 source로부터 잘 입력되었는지 확인합니다. 
 
-```
+```shell
 > ./kafka-console-consumer.sh --bootstrap-server ec2-kafka:9092 --topic connect-test --from-beginning                   
 {"schema":{"type":"string","optional":false},"payload":"hello"}
 {"schema":{"type":"string","optional":false},"payload":"world"}
