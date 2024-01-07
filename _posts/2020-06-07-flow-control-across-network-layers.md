@@ -1,6 +1,6 @@
 ---
 layout: post
-title: FLow Control across Network Layers
+title: Flow Control across Network Layers
 subheading: 
 author: taehyeok-jang
 categories: [network]
