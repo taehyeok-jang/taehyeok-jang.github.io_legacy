@@ -94,7 +94,7 @@ Kafka Connect는 이미 위의 모든 문제를 해결하면서 성장한 framew
 1. Usually easier to setup
 2. Requires fewer permissions
 
-### 단점
+#### 단점
 
 1. Impact of polling the DB
 2. Needs specific columns in source schema to track changes
