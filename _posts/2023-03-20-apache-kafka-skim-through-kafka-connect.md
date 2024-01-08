@@ -87,35 +87,13 @@ Kafka Connect는 이미 위의 모든 문제를 해결하면서 성장한 framew
 
 
 
-### Query-based CDC
-
-#### 장점 
-
-1. Usually easier to setup
-2. Requires fewer permissions
-
-#### 단점
-
-1. Impact of polling the DB
-2. Needs specific columns in source schema to track changes
-3. Can't track deletes
-4. Can't track multiple events between polling interval
-
-### Log-based CDC
-
-#### 장점
-
-1. All data changes are captured
-2. Low delays of events while avoiding increased CPU load
-3. No impact on data model
-4. Can capture deletes
-5. Can capture old record state and further meta data
-
-#### 단점 
-
-1. More setup steps
-2. Higher system previleges required
-3. Can be expensive for some proprietary DB
+|          | Query-based                                                  | Log-based                                                    |
+| -------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| Method   | Polling DB with a query like,<br /> 'SELECT * <br />FROM table<br />WHERE updatedat BETWEEN 'now() - 1 hour' AND 'now()' | Transaction log (Ex. MySQL binlog) based streaming.<br />Retrieve dump from master and parse binary log objects. |
+| Pros     | - Usually easier to setup                                    | - All data changes are captured ﻿﻿<br />- Can capture DELETE﻿<br />- Real-time capture while avoiding increased CPU load |
+| Cons     | - ﻿﻿Impact of polling DB ﻿﻿<br />- Can't track events between polling interval<br />- Can't track DELETE | - More setup steps <br />- ﻿﻿Higher system previleges required |
+| Projects | kafka-connect-jdbc,...                                       | https://debezium.io/<br />https://github.com/alibaba/canal   |
+| ,        |                                                              |                                                              |
 
 
 
