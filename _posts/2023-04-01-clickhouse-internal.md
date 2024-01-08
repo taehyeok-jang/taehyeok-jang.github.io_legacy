@@ -5,7 +5,6 @@ subheading:
 author: taehyeok-jang
 categories: [database]
 tags: [clickhouse, internal]
-
 ---
 
 ## Introduction 
