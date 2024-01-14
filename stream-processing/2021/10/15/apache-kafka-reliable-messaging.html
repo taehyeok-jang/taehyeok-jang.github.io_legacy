@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="google-translate-customization" content="108d9124921d80c3-80e20d618ff053c8-g4f02ec6f3dba68b7-c">
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Apache Kafka - How to Achieve Reliable Messaging | Keep Calm and HAKUNA MATATA</title>
+<meta name="generator" content="Jekyll v4.3.3">
+<meta property="og:title" content="Apache Kafka - How to Achieve Reliable Messaging">
+<meta name="author" content="taehyeok-jang">
+<meta property="og:locale" content="en_US">
+<meta name="description" content="이 글은 Apache Kafka 공식 문서와 관련 자료를 읽고 정리한 글입니다.">
+<meta property="og:description" content="이 글은 Apache Kafka 공식 문서와 관련 자료를 읽고 정리한 글입니다.">
+<link rel="canonical" href="/jekyll-theme-yat/stream-processing/2021/10/15/apache-kafka-reliable-messaging.html">
+<meta property="og:url" content="/jekyll-theme-yat/stream-processing/2021/10/15/apache-kafka-reliable-messaging.html">
+<meta property="og:site_name" content="Keep Calm and HAKUNA MATATA">
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2021-10-15T00:00:00+00:00">
+<meta name="twitter:card" content="summary">
+<meta property="twitter:title" content="Apache Kafka - How to Achieve Reliable Messaging">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"taehyeok-jang"},"dateModified":"2021-10-15T00:00:00+00:00","datePublished":"2021-10-15T00:00:00+00:00","description":"이 글은 Apache Kafka 공식 문서와 관련 자료를 읽고 정리한 글입니다.","headline":"Apache Kafka - How to Achieve Reliable Messaging","mainEntityOfPage":{"@type":"WebPage","@id":"/jekyll-theme-yat/stream-processing/2021/10/15/apache-kafka-reliable-messaging.html"},"url":"/jekyll-theme-yat/stream-processing/2021/10/15/apache-kafka-reliable-messaging.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="shortcut icon" href="">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-noto-sans@0.0.72/index.min.css">
+  <link rel="stylesheet" href="/jekyll-theme-yat/assets/css/main.css">
+  <script src="/jekyll-theme-yat/assets/js/main.js"></script><link type="application/atom+xml" rel="alternate" href="/jekyll-theme-yat/feed.xml" title="Keep Calm and HAKUNA MATATA">
+<script>
+  function initGoogleAnalytics() {
+    var doNotTrack = (window.doNotTrack === "1" || navigator.doNotTrack === "1" ||
+      navigator.doNotTrack === "yes" || navigator.msDoNotTrack === "1");
+    var enableDNT = "true" == "true";
+
+    if (!enableDNT || !doNotTrack) {
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'G-WWZ625TGVC', 'auto');
+      ga('send', 'pageview');
+    }
+  }
+  window.addEventListener("load", initGoogleAnalytics);
+</script>
+
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/default.min.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js"></script>
+<!-- and it's easy to individually load additional languages -->
+<script charset="UTF-8" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/languages/go.min.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+// Init highlight js
+document.addEventListener('DOMContentLoaded', function(event) {
+  var els = document.querySelectorAll('pre code')
+
+  function addLangData(block) {
+    var outer = block.parentElement.parentElement.parentElement;
+    var lang = block.getAttribute('data-lang');
+    for (var i = 0; i < outer.classList.length; i++) {
+      var cls = outer.classList[i];
+      if (cls.startsWith('language-')) {
+        lang = cls;
+        break;
+      }
+    }
+    if (!lang) {
+      cls = block.getAttribute('class');
+      lang = cls ? cls.replace('hljs ', '') : '';
+    }
+    if (lang.startsWith('language-')) {
+      lang = lang.substr(9);
+    }
+    block.setAttribute('class', 'hljs ' + lang);
+    block.parentNode.setAttribute('data-lang', lang);
+  }
+
+  function addBadge(block) {
+    var enabled = ('true' || 'true').toLowerCase();
+    if (enabled == 'true') {
+      var pre = block.parentElement;
+      pre.classList.add('badge');
+    }
+  }
+
+  function handle(block) {
+    addLangData(block);
+    addBadge(block)
+    hljs.highlightBlock(block);
+  }
+
+  for (var i = 0; i < els.length; i++) {
+    var el = els[i];
+    handle(el);
+  }
+});
+</script>
+
+<style>
+  /* code language badge */
+  pre.badge::before {
+    content: attr(data-lang);
+    color: #fff;
+    background-color: #ff4e00;
+    padding: 0 .5em;
+    border-radius: 0 2px;
+    text-transform: uppercase;
+    text-align: center;
+    min-width: 32px;
+    display: inline-block;
+    position: absolute;
+    right: 0;
+  }
+
+  /* fix wrong badge display for firefox browser */
+  code > table pre::before {
+    display: none;
+  }
+</style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<header class="site-header " role="banner">
+
+  <div class="wrapper">
+    <div class="site-header-inner">
+<span class="site-brand"><a class="site-brand-inner" rel="author" href="/jekyll-theme-yat/">
+  <img class="site-favicon" title="Keep Calm and HAKUNA MATATA" src="" onerror="this.style.display='none'">
+  Keep Calm and HAKUNA MATATA
+</a>
+</span><nav class="site-nav">
+          <input type="checkbox" id="nav-trigger" class="nav-trigger">
+          <label for="nav-trigger">
+            <span class="menu-icon">
+              <svg viewbox="0 0 18 15" width="18px" height="15px">
+                <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"></path>
+              </svg>
+            </span>
+          </label>
+
+          <div class="trigger">
+<a class="page-link" href="/jekyll-theme-yat/about.html">ABOUT</a><a class="page-link" href="/jekyll-theme-yat/archives.html">ARCHIVES</a><a class="page-link" href="/jekyll-theme-yat/categories.html">CATEGORIES</a><a class="page-link" href="/jekyll-theme-yat/">HOME</a><a class="page-link" href="/jekyll-theme-yat/tags.html">TAGS</a>
+
+
+
+
+
+
+
+
+
+<span class="page-link">
+
+
+
+<div id="google_translate_element" style="display: none;">
+</div>
+
+<span class="ct-language">
+  <ul class="list-unstyled ct-language-dropdown">
+    
+      <li>
+        <a href="#" class="lang-select" data-lang="en">
+          
+          <img src="https://cdn.countryflags.com/thumbs/united-states-of-america/flag-400.png" title="English">
+          
+        </a>
+      </li>
+    
+      <li>
+        <a href="#" class="lang-select" data-lang="fr">
+          
+          <img src="https://cdn.countryflags.com/thumbs/france/flag-400.png" title="French">
+          
+        </a>
+      </li>
+    
+      <li>
+        <a href="#" class="lang-select" data-lang="zh-CN">
+          
+          <img src="https://cdn.countryflags.com/thumbs/china/flag-400.png" title="Chinese(Simple)">
+          
+        </a>
+      </li>
+    
+      <li>
+        <a href="#" class="lang-select" data-lang="ja">
+          
+          <img src="https://cdn.countryflags.com/thumbs/japan/flag-400.png" title="Japanese">
+          
+        </a>
+      </li>
+    
+      <li>
+        <a href="#" class="lang-select" data-lang="ko">
+          
+          <img src="https://cdn.countryflags.com/thumbs/south-korea/flag-400.png" title="Korean">
+          
+        </a>
+      </li>
+    
+      <li>
+        <a href="#" class="lang-select" data-lang="ru">
+          
+          <img src="https://cdn.countryflags.com/thumbs/russia/flag-400.png" title="Russian">
+          
+        </a>
+      </li>
+    
+  </ul>
+</span>
+
+<script type="text/javascript">
+function googleTranslateElementInit() {
+  new google.translate.TranslateElement({
+    pageLanguage: 'en',
+    autoDisplay: false,
+    layout: google.translate.TranslateElement.InlineLayout.VERTICAL
+  }, 'google_translate_element');
+
+  // Links to cross-origin destinations are unsafe
+  var gll = document.getElementsByClassName('goog-logo-link')[0];
+  if (gll) {
+    gll.setAttribute('rel', 'noopener');
+  }
+
+  function restoreLang() {
+    var iframe = document.getElementsByClassName('goog-te-banner-frame')[0];
+    if (!iframe) return;
+
+    var innerDoc = iframe.contentDocument || iframe.contentWindow.document;
+    var restore_el = innerDoc.getElementsByTagName("button");
+
+    for (var i = 0; i < restore_el.length; i++) {
+      if (restore_el[i].id.indexOf("restore") >= 0) {
+        restore_el[i].click();
+        var close_el = innerDoc.getElementsByClassName("goog-close-link");
+        close_el[0].click();
+        return;
+      }
+    }
+  }
+
+  function triggerHtmlEvent(element, eventName) {
+    var event;
+    if (document.createEvent) {
+      event = document.createEvent('HTMLEvents');
+      event.initEvent(eventName, true, true);
+      element.dispatchEvent(event);
+    } else {
+      event = document.createEventObject();
+      event.eventType = eventName;
+      element.fireEvent('on' + event.eventType, event);
+    }
+  }
+
+  var googleCombo = document.querySelector("select.goog-te-combo");
+  var langSelect = document.querySelector('.ct-language');
+  langSelect.addEventListener('click', function(event) {
+    if (!event.target) {
+      return;
+    }
+
+    var selected = document.querySelector('.ct-language .ct-language-selected');
+    if (selected) {
+      selected.classList.remove('ct-language-selected');
+    }
+
+    var target = event.target;
+    while (target && target !== langSelect ) {
+      if (target.matches('.lang-select')) {
+        break;
+      }
+      target = target.parentElement;
+    }
+
+    if (target && target.matches('.lang-select')) {
+      var lang = target.getAttribute('data-lang');
+      if (googleCombo.value == lang) {
+        restoreLang();
+      } else {
+        target.parentElement.classList.add('ct-language-selected');
+        googleCombo.value = lang;
+        triggerHtmlEvent(googleCombo, 'change');
+      }
+    }
+
+    event.preventDefault();
+  });
+}
+</script>
+
+<script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+</span>
+</div>
+        </nav>
+</div>
+  </div>
+</header>
+
+<script>
+  function initHeader() {
+    var lastScrollY = getScrollPos().y;
+    var documentElement = document.documentElement;
+
+    function storeScrollData() {
+      var y = getScrollPos().y;var scrollStatus = "";
+
+      if (y <= 0) {
+        scrollStatus = "top";
+      } else if ((window.innerHeight + y) >= document.body.offsetHeight) {
+        scrollStatus = "bottom";
+      } else {
+        var isScrollDown = (y - lastScrollY > 0) ? true : false;
+        scrollStatus = isScrollDown ? "down" : "up";
+      }
+
+      lastScrollY = y;
+      documentElement.setAttribute("data-scroll-status", scrollStatus);
+    }
+
+    window.addEventListener('scroll', function(e) {
+      storeScrollData();
+    });
+
+    storeScrollData();
+  }
+  document.addEventListener('DOMContentLoaded', initHeader);
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+  function hashLocate(hashValue) {
+    hashValue = hashValue.replace(/^.*#h-/, '');
+    hashValue = decodeURIComponent(hashValue);
+    var element = document.getElementById(hashValue);
+
+    if (!element) {
+      return;
+    }
+
+    var header = document.querySelector('header.site-header');
+    var headerRect = header.getBoundingClientRect();
+    var headerTop = Math.floor(headerRect.top);
+    var headerHeight = Math.floor(headerRect.height);
+    var scrollPos = getScrollPos();
+    var offsetY = element.offsetTop - (headerTop + headerHeight + 20);
+
+    if (offsetY == scrollPos.y) {
+      return;
+    }
+
+    if (headerTop == 0  && offsetY > scrollPos.y) {
+      offsetY += headerHeight + 2;
+    } else if (headerTop < 0  && offsetY < scrollPos.y) {
+      offsetY -= headerHeight - 2;
+    }
+
+    smoothScrollTo(offsetY);
+  }
+
+  // The first event occurred
+  window.addEventListener('load', function(event) {
+    if (window.location.hash) {
+      hashLocate(window.location.hash);
+    }
+  });
+
+  // The first event occurred
+  window.addEventListener('click', function(event) {
+    if (event.target.tagName.toLowerCase() == 'a') {
+      hashLocate(event.target.getAttribute('href'));
+    }
+  });
+</script>
+<div class="theme-toggle">
+  <input type="checkbox" id="theme-switch">
+  <label for="theme-switch">
+    <div class="toggle"></div>
+    <div class="names">
+      <p class="light">Light</p>
+      <p class="dark">Dark</p>
+    </div>
+  </label>
+</div>
+
+
+
+
+<script>
+  (function() {
+    var sw = document.getElementById('theme-switch');
+    var html = document.getElementsByTagName('html')[0];
+    var nightModeOption = ('auto' || 'auto').toLowerCase();
+    var storage = nightModeOption === 'manual'
+        ? localStorage
+        : sessionStorage;
+    var themeData = loadThemeData();
+
+    function saveThemeData(data) {
+      storage.setItem('theme', JSON.stringify(data));
+    }
+
+    function loadThemeData() {
+      var data = storage.getItem('theme');
+      try {
+        data = JSON.parse(data ? data : '');
+      } catch(e) {
+        data = { nightShift: undefined, autoToggleAt: 0 };
+        saveThemeData(data);
+      }
+      return data;
+    }
+
+    function handleThemeToggle(nightShift) {
+      themeData.nightShift = nightShift;
+      saveThemeData(themeData);
+      html.dataset.theme = nightShift ? 'dark' : 'light';
+      setTimeout(function() {
+        sw.checked = nightShift ? true : false;
+      }, 50);
+    }
+
+    function autoThemeToggle() {
+      // Next time point of theme toggle
+      var now = new Date();
+      var toggleAt = new Date();
+      var hours = now.getHours();
+      var nightShift = hours >= 19 || hours <=7;
+
+      if (nightShift) {
+        if (hours > 7) {
+          toggleAt.setDate(toggleAt.getDate() + 1);
+        }
+        toggleAt.setHours(7);
+      } else {
+        toggleAt.setHours(19);
+      }
+
+      toggleAt.setMinutes(0);
+      toggleAt.setSeconds(0);
+      toggleAt.setMilliseconds(0)
+
+      var delay = toggleAt.getTime() - now.getTime();
+
+      // auto toggle theme mode
+      setTimeout(function() {
+        handleThemeToggle(!nightShift);
+      }, delay);
+
+      return {
+        nightShift: nightShift,
+        toggleAt: toggleAt.getTime()
+      };
+    }
+
+    // Listen the theme toggle event
+    sw.addEventListener('change', function(event) {
+      handleThemeToggle(event.target.checked);
+    });
+
+    if (nightModeOption == 'auto') {
+      var data = autoThemeToggle();
+
+      // Toggle theme by local setting
+      if (data.toggleAt > themeData.autoToggleAt) {
+        themeData.autoToggleAt = data.toggleAt;
+        handleThemeToggle(data.nightShift);
+      } else {
+        handleThemeToggle(themeData.nightShift);
+      }
+    } else if (nightModeOption == 'manual') {
+      handleThemeToggle(themeData.nightShift);
+    } else {
+      var nightShift = themeData.nightShift;
+      if (nightShift === undefined) {
+        nightShift = nightModeOption === 'on';
+      }
+      handleThemeToggle(nightShift);
+    }
+  })();
+</script>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <div class="framework">
+  <section class="main">
+
+     <div class="post">
+  <section>
+
+
+
+
+
+
+
+
+
+<header class="post-header">
+  <h1 class="post-title p-name" itemprop="name headline">Apache Kafka - How to Achieve Reliable Messaging</h1>
+  <h2 class="post-subtitle"></h2>
+
+  <p class="post-meta">
+    <time class="dt-published" datetime="2021-10-15T00:00:00+00:00" itemprop="datePublished"><i class="fa fa-calendar"></i> Oct 15, 2021
+    </time>
+
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <span class="post-reading-time left-vsplit"><i class="fa fa-clock-o"></i> About 4 mins</span>
+  </p>
+<div class="post-tags"><a class="post-tag" href="/jekyll-theme-yat/tags.html#kafka">#kafka</a></div></header>
+<article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+    <div class="post-content e-content" itemprop="articleBody">
+
+      <p>이 글은 <a href="https://kafka.apache.org/documentation/#semantics">Apache Kafka 공식 문서</a>와 관련 자료를 읽고 정리한 글입니다.</p>
+
+<h2 id="introduction">Introduction</h2>
+
+<p>Reliable messaging in Apache Kafka can be achieved by designing a system with a combination of Kafka broker setup, and producer &amp; consumer configurations. By implementing these setup and configurations, Apache Kafka can provide a reliable messaging system that is able to handle failures and ensure message delivery.</p>
+
+<ul>
+  <li>On broker side,</li>
+</ul>
+
+<p>Kafka’s built-in replication feature ensures fault tolerance.</p>
+
+<ul>
+  <li>On producer side,</li>
+</ul>
+
+<p>records are sent asynchronously and the acknowledgement level is set to “all” with a minimum number of in-sync replicas set to 2. Additionally, idempotence is enabled to avoid duplication.</p>
+
+<ul>
+  <li>On consumer side,</li>
+</ul>
+
+<p>auto-commit is disabled to ensure at-least-once processing.</p>
+
+<h2 id="broker">Broker</h2>
+
+<h3 id="kafka-broker-is-fault-tolerant-with-replication">Kafka Broker is fault tolerant with replication</h3>
+
+<ul>
+  <li>Message simply gets destroyed in the transit from producer to leader</li>
+  <li>Leader of the partition is down</li>
+  <li>All brokers are down (disastrous…) however such a situation rarely occurs in multi IDC architecture.</li>
+</ul>
+
+<p>In distributed systems, fault tolerance can be achieved with enough redundancy. Apache Kafka also provides an option to achieve the redundancy.</p>
+
+<p>https://kafka.apache.org/documentation/#brokerconfigs_offsets.topic.replication.factor (default value: 3)</p>
+
+<p>=&gt; Set offsets.topic.replication.factor &gt;= 3</p>
+
+<p><img src="https://github.com/taehyeok-jang/taehyeok-jang.github.io/assets/31732943/03aaa9a4-ea2d-4ece-9de7-69e74736d481" alt="event-driven-kafka-2_(1)"></p>
+
+<h2 id="producer">Producer</h2>
+
+<h3 id="producer-sends-a-record-asynchronously">Producer sends a record asynchronously</h3>
+
+<p><strong>The send is asynchronous and this method will return immediately once the record has been stored in the buffer of records waiting to be sent</strong>. This allows sending many records in parallel without blocking to wait for the response after each one.</p>
+
+<p><img width="957" alt="apache_kafka_producer_internal" src="https://github.com/taehyeok-jang/taehyeok-jang.github.io/assets/31732943/82f5739c-3f6b-4c65-a7f7-f6928fb9faac"></p>
+
+<h3 id="set-acks--all-and-mininsyncreplicas--2">Set acks = all, and min.insync.replicas = 2</h3>
+
+<p><a href="https://kafka.apache.org/documentation/#producerconfigs_acks">https://kafka.apache.org/documentation/#producerconfigs_acks</a></p>
+
+<p><a href="https://kafka.apache.org/documentation/#brokerconfigs_min.insync.replicas">https://kafka.apache.org/documentation/#brokerconfigs_min.insync.replicas</a></p>
+
+<p>When used together, min.insync.replicas and acks allow you to enforce greater durability guarantees. A typical scenario would be to create a topic with a replication factor of 3, set min.insync.replicas to 2, and produce with acks of “all”.</p>
+
+<p><img src="https://github.com/taehyeok-jang/taehyeok-jang.github.io/assets/31732943/ec7b2784-a6c7-4ff4-a1f1-18894ba34c81" alt="apache_kafka_producer_config_01"></p>
+
+<p>We simply need to configure <code class="language-plaintext highlighter-rouge">acks</code> property in producer to <code class="language-plaintext highlighter-rouge">all</code>. Meaning of different values of acks property is as follows:</p>
+
+<ul>
+  <li>acks=0 : The default is <code class="language-plaintext highlighter-rouge">acks=0</code>, which means producer will send the message and forget, it won’t wait for any acknowledgement from the leader of the partition to which the message is to be produced.</li>
+  <li>acks=1 : Means leader sends acknowledgement to the producer after it writes the message to its own replica without waiting for followers to replicate the messages. So, if the leader fails before any follower replicates the message, the record is lost.</li>
+  <li>acks=all : With this, once the leader receives acknowledgements from in-sync replicas, telling they have replicated the message, it will send back the acknowledgement to the producer. This guarantees that the record will not be lost as long as at least one in-sync replica remains alive.</li>
+</ul>
+
+<p><img src="https://github.com/taehyeok-jang/taehyeok-jang.github.io/assets/31732943/6b2a9d1c-06eb-4af8-8575-240a301b5245" alt="apache_kafka_producer_config_02"></p>
+
+<p>The property min.insync.replicas specifies the minimum number of replicas that must acknowledge before leader send back acknowledgement to the client. If this minimum is not satisfied, then the producer will raise an exception (either NotEnoughReplicas or NotEnoughReplicasAfterAppend).</p>
+
+<p><img src="https://github.com/taehyeok-jang/taehyeok-jang.github.io/assets/31732943/7cbe5f41-3d3e-4589-b6e3-828fa96fade1" alt="apache_kafka_producer_config_03"></p>
+
+<h3 id="set-enableidempotencetrue-to-avoid-duplication">Set enable.idempotence=true to avoid duplication</h3>
+
+<p><a href="https://kafka.apache.org/documentation/#producerconfigs_enable.idempotence">https://kafka.apache.org/documentation/#producerconfigs_enable.idempotence</a></p>
+
+<p>This happens when producer fails to receive acknowledgement before resending the message. So, the message is already persisted in leader replica, but producer did not receive any acknowledgement from leader or the acknowledgement is received after the producer resend timer is expired and hence producer resends the message causing duplication.</p>
+
+<p>When set to ‘true’, the producer will ensure that exactly one copy of each message is written in the stream.</p>
+
+<h3 id="set-retriesn-with-enough-buffer-memory">Set retries=n with enough buffer memory</h3>
+
+<p><a href="https://kafka.apache.org/documentation/#producerconfigs_retries">https://kafka.apache.org/documentation/#producerconfigs_retries</a></p>
+
+<p><a href="https://kafka.apache.org/documentation/#producerconfigs_buffer.memory">https://kafka.apache.org/documentation/#producerconfigs_buffer.memory</a></p>
+
+<p>When broker breaks down temporarily, producer gets exception. With multiple retries with enough buffer, all records can be eventually sent again.</p>
+
+<p><img src="https://github.com/taehyeok-jang/taehyeok-jang.github.io/assets/31732943/679bf69d-b77e-433c-b9a3-5896debd7baf" alt="apache_kafka_producer_config_04_(1)"></p>
+
+<h2 id="consumer">Consumer</h2>
+
+<p><a href="https://kafka.apache.org/documentation/#consumerconfigs_enable.auto.commit">https://kafka.apache.org/documentation/#consumerconfigs_enable.auto.commit</a></p>
+
+<h3 id="set-enableautocommitfalse-for-processing-at-least-once">Set enable.auto.commit=false for processing at-least-once</h3>
+
+<p>By default, commit occurs automatically periodically in the background. If we want to manually commit, then we should set enable.auto.commit property of consumer to false and then call Consumer.commit().</p>
+
+<p>=&gt; With enable.auto.commit=false, consumer never commits before data processing is done. This may cause duplicated processing, but never misses processing records.</p>
+
+<h4 id="at-most-once">At-most-once</h4>
+
+<p>enable.auto.commit=true (by default)</p>
+
+<p><img src="https://github.com/taehyeok-jang/taehyeok-jang.github.io/assets/31732943/4f96b3d8-4f6d-400c-8d5e-731145c8977d" alt="apache_kafka_consumer_auto_commit_01"></p>
+
+<p><img src="https://github.com/taehyeok-jang/taehyeok-jang.github.io/assets/31732943/34f79c55-b3fe-42a2-bdfd-73fcb0a0b721" alt="apache_kafka_consumer_auto_commit_02"></p>
+
+<h4 id="at-least-once">At-least-once</h4>
+
+<p>enable.auto.commit=false</p>
+
+<p><img src="https://github.com/taehyeok-jang/taehyeok-jang.github.io/assets/31732943/35b4dac5-0ebd-4220-b9d2-08a1133c6798" alt="apache_kafka_consumer_manual_commit"></p>
+
+<h2 id="limitation">Limitation</h2>
+
+<p>As we mentioned above, producer sends a record asynchronously. Therefore records in the buffer may be lost in several below scenarios,</p>
+
+<ul>
+  <li>When application aborts unexpectedly</li>
+  <li>When Kafka broker breaks down for a long time</li>
+</ul>
+
+<h2 id="references">References</h2>
+
+<ul>
+  <li><a href="https://www.oreilly.com/library/view/kafka-the-definitive/9781492043072/">Kafka: The Definitive Guide</a></li>
+  <li><a href="https://kafka.apache.org/documentation/#producerconfigs_acks">https://kafka.apache.org/documentation/</a></li>
+  <li>Attachments
+    <ul>
+      <li><a href="https://kafka.apache.org/0110/javadoc/index.html?org/apache/kafka/clients/producer/KafkaProducer.html">https://kafka.apache.org/0110/javadoc/index.html?org/apache/kafka/clients/producer/KafkaProducer.html</a></li>
+      <li><a href="https://towardsdatascience.com/10-configs-to-make-your-kafka-producer-more-resilient-ec6903c63e3f">https://towardsdatascience.com/10-configs-to-make-your-kafka-producer-more-resilient-ec6903c63e3f</a></li>
+      <li><a href="https://blog.ippon.tech/event-driven-architecture-getting-started-with-kafka-part-2/">https://blog.ippon.tech/event-driven-architecture-getting-started-with-kafka-part-2/</a></li>
+      <li><a href="https://www.esolutions.tech/delivery-guarantees-provided-by-Kafka">https://www.esolutions.tech/delivery-guarantees-provided-by-Kafka</a></li>
+    </ul>
+  </li>
+</ul>
+
+
+    </div>
+
+</article>
+<div class="post-nav">
+<a class="previous" href="/jekyll-theme-yat/stream-processing/2021/10/10/apache-kafka-processing-sementics.html" title="Apache Kafka - Processing Semantics">Apache Kafka - Processing Semantics</a><a class="next" href="/jekyll-theme-yat/distributed-systems/2022/01/03/api-design-in-distributed-systems.html" title="API Design in Distributed Systems">API Design in Distributed Systems</a>
+</div>
+<div class="post-related">
+      <div>Related Articles</div>
+      <ul>
+        <li><a class="post-link" href="/jekyll-theme-yat/java/2022/02/19/java-date-time-api.html" title="API Design in Distributed Systems">Java Date Time API</a></li>
+<li><a class="post-link" href="/jekyll-theme-yat/database/2023/04/01/clickhouse-internal.html" title="API Design in Distributed Systems">Clickhouse - Internal</a></li>
+<li><a class="post-link" href="/jekyll-theme-yat/database/2021/05/12/redis-intro.html" title="API Design in Distributed Systems">Redis Introduction</a></li>
+<li><a class="post-link" href="/jekyll-theme-yat/stream-processing/2021/10/15/apache-kafka-reliable-messaging.html" title="API Design in Distributed Systems">Apache Kafka - How to Achieve Reliable Messaging</a></li>
+</ul>
+    </div>
+<div class="post-comments"></div></section>
+</div>
+
+
+  </section>
+  <section class="sidebar" style="margin-left: 15px;">
+    <!-- Get sidebar items --><style type="text/css" media="screen">
+.post-menu ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+</style>
+
+<div class="post-menu">
+  <div class="post-menu-title">TOC</div>
+  <div class="post-menu-content"></div>
+</div>
+
+<script>
+  function generateContent() {
+    var menu = document.querySelector(".post-menu");
+    var menuContent =  menu.querySelector(".post-menu-content");
+    var headings = document.querySelector(".post-content").querySelectorAll("h2, h3, h4, h5, h6");
+
+    // Hide menu when no headings
+    if (headings.length === 0) {
+      return menu.style.display = "none";
+    }
+
+    // Generate post menu
+    var menuHTML = '';
+    for (var i = 0; i < headings.length; i++) {
+      var h = headings[i];
+      menuHTML += (
+        '<li class="h-' + h.tagName.toLowerCase() + '">'
+        + '<a href="#h-' + h.getAttribute('id') + '">' + h.textContent + '</a></li>');
+    }
+
+    menuContent.innerHTML = '<ul>' + menuHTML + '</ul>';
+
+    // The header element
+    var header = document.querySelector('header.site-header');
+
+    function doMenuCollapse(index, over_items) {
+      var items = menuContent.firstChild.children;
+
+      if (over_items == undefined) {
+        over_items = 20;
+      }
+
+      if (items.length < over_items) {
+        return;
+      }
+
+      var activeItem = items[index];
+      var beginItem = activeItem
+      var endItem = activeItem
+      var beginIndex = index;
+      var endIndex = index + 1;
+      while (beginIndex >= 0
+        && !items[beginIndex].classList.contains('h-h2')) {
+        beginIndex -= 1;
+      }
+      while (endIndex < items.length
+        && !items[endIndex].classList.contains('h-h2')) {
+        endIndex += 1;
+      }
+      for (var i = 0; i < beginIndex; i++) {
+        item = items[i]
+        if (!item.classList.contains('h-h2')) {
+          item.style.display = 'none';
+        }
+      }
+      for (var i = beginIndex + 1; i < endIndex; i++) {
+        item = items[i]
+        // if (!item.classList.contains('h-h2')) {
+          item.style.display = '';
+        // }
+      }
+      for (var i = endIndex; i < items.length; i++) {
+        item = items[i]
+        if (!item.classList.contains('h-h2')) {
+          item.style.display = 'none';
+        }
+      }
+    }
+
+    // Init menu collapsed
+    doMenuCollapse(-1);
+
+    // Active the menu item
+    window.addEventListener('scroll', function (event) {
+      var lastActive = menuContent.querySelector('.active');
+      var changed = true;
+      var activeIndex = -1;
+      for (var i = headings.length - 1; i >= 0; i--) {
+        var h = headings[i];
+        var headingRect = h.getBoundingClientRect();
+        var headerRect = header.getBoundingClientRect();
+        var headerTop = Math.floor(headerRect.top);
+        var headerHeight = Math.floor(headerRect.height);
+        var headerHeight = headerTop + headerHeight + 20;
+        if (headingRect.top <= headerHeight) {
+          var id = 'h-' + h.getAttribute('id');
+          var a = menuContent.querySelector('a[href="#' + id  + '"]');
+          var curActive = a.parentNode;
+          if (curActive) {
+            curActive.classList.add('active');
+            activeIndex = i;
+          }
+          if (lastActive == curActive) {
+            changed = false;
+          }
+          break;
+        }
+      }
+      if (changed) {
+        if (lastActive) {
+          lastActive.classList.remove('active');
+        }
+        doMenuCollapse(activeIndex);
+      }
+      event.preventDefault();
+    });
+  }
+  generateContent();
+</script>
+</section>
+</div>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/jekyll-theme-yat/"></data>
+
+  <div class="wrapper">
+    <div class="site-footer-inner">
+<div>Unpublished Work <span class="copyleft">©</span> 2017-2024 TaeHyeok Jang</div>
+      <div>Powered by <a title="Jekyll is a simple, blog-aware, static site
+      generator." href="http://jekyllrb.com/">Jekyll</a> &amp; <a title="Yat, yet
+      another theme." href="https://github.com/jeffreytse/jekyll-theme-yat">Yat Theme</a>.</div>
+      <div class="footer-col rss-subscribe">Subscribe <a href="/jekyll-theme-yat/feed.xml">via RSS</a>
+</div>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

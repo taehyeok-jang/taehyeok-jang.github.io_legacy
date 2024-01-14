@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="google-translate-customization" content="108d9124921d80c3-80e20d618ff053c8-g4f02ec6f3dba68b7-c">
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Decaton - High performance stream processing framwork based on Apache Kafka - Part 1 | Keep Calm and HAKUNA MATATA</title>
+<meta name="generator" content="Jekyll v4.3.3">
+<meta property="og:title" content="Decaton - High performance stream processing framwork based on Apache Kafka - Part 1">
+<meta name="author" content="taehyeok-jang">
+<meta property="og:locale" content="en_US">
+<meta name="description" content="Introduction">
+<meta property="og:description" content="Introduction">
+<link rel="canonical" href="/jekyll-theme-yat/stream-processing/2020/09/20/decaton-01.html">
+<meta property="og:url" content="/jekyll-theme-yat/stream-processing/2020/09/20/decaton-01.html">
+<meta property="og:site_name" content="Keep Calm and HAKUNA MATATA">
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2020-09-20T00:00:00+00:00">
+<meta name="twitter:card" content="summary">
+<meta property="twitter:title" content="Decaton - High performance stream processing framwork based on Apache Kafka - Part 1">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"taehyeok-jang"},"dateModified":"2020-09-20T00:00:00+00:00","datePublished":"2020-09-20T00:00:00+00:00","description":"Introduction","headline":"Decaton - High performance stream processing framwork based on Apache Kafka - Part 1","mainEntityOfPage":{"@type":"WebPage","@id":"/jekyll-theme-yat/stream-processing/2020/09/20/decaton-01.html"},"url":"/jekyll-theme-yat/stream-processing/2020/09/20/decaton-01.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="shortcut icon" href="">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-noto-sans@0.0.72/index.min.css">
+  <link rel="stylesheet" href="/jekyll-theme-yat/assets/css/main.css">
+  <script src="/jekyll-theme-yat/assets/js/main.js"></script><link type="application/atom+xml" rel="alternate" href="/jekyll-theme-yat/feed.xml" title="Keep Calm and HAKUNA MATATA">
+<script>
+  function initGoogleAnalytics() {
+    var doNotTrack = (window.doNotTrack === "1" || navigator.doNotTrack === "1" ||
+      navigator.doNotTrack === "yes" || navigator.msDoNotTrack === "1");
+    var enableDNT = "true" == "true";
+
+    if (!enableDNT || !doNotTrack) {
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'G-WWZ625TGVC', 'auto');
+      ga('send', 'pageview');
+    }
+  }
+  window.addEventListener("load", initGoogleAnalytics);
+</script>
+
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/default.min.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js"></script>
+<!-- and it's easy to individually load additional languages -->
+<script charset="UTF-8" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/languages/go.min.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+// Init highlight js
+document.addEventListener('DOMContentLoaded', function(event) {
+  var els = document.querySelectorAll('pre code')
+
+  function addLangData(block) {
+    var outer = block.parentElement.parentElement.parentElement;
+    var lang = block.getAttribute('data-lang');
+    for (var i = 0; i < outer.classList.length; i++) {
+      var cls = outer.classList[i];
+      if (cls.startsWith('language-')) {
+        lang = cls;
+        break;
+      }
+    }
+    if (!lang) {
+      cls = block.getAttribute('class');
+      lang = cls ? cls.replace('hljs ', '') : '';
+    }
+    if (lang.startsWith('language-')) {
+      lang = lang.substr(9);
+    }
+    block.setAttribute('class', 'hljs ' + lang);
+    block.parentNode.setAttribute('data-lang', lang);
+  }
+
+  function addBadge(block) {
+    var enabled = ('true' || 'true').toLowerCase();
+    if (enabled == 'true') {
+      var pre = block.parentElement;
+      pre.classList.add('badge');
+    }
+  }
+
+  function handle(block) {
+    addLangData(block);
+    addBadge(block)
+    hljs.highlightBlock(block);
+  }
+
+  for (var i = 0; i < els.length; i++) {
+    var el = els[i];
+    handle(el);
+  }
+});
+</script>
+
+<style>
+  /* code language badge */
+  pre.badge::before {
+    content: attr(data-lang);
+    color: #fff;
+    background-color: #ff4e00;
+    padding: 0 .5em;
+    border-radius: 0 2px;
+    text-transform: uppercase;
+    text-align: center;
+    min-width: 32px;
+    display: inline-block;
+    position: absolute;
+    right: 0;
+  }
+
+  /* fix wrong badge display for firefox browser */
+  code > table pre::before {
+    display: none;
+  }
+</style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<header class="site-header " role="banner">
+
+  <div class="wrapper">
+    <div class="site-header-inner">
+<span class="site-brand"><a class="site-brand-inner" rel="author" href="/jekyll-theme-yat/">
+  <img class="site-favicon" title="Keep Calm and HAKUNA MATATA" src="" onerror="this.style.display='none'">
+  Keep Calm and HAKUNA MATATA
+</a>
+</span><nav class="site-nav">
+          <input type="checkbox" id="nav-trigger" class="nav-trigger">
+          <label for="nav-trigger">
+            <span class="menu-icon">
+              <svg viewbox="0 0 18 15" width="18px" height="15px">
+                <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"></path>
+              </svg>
+            </span>
+          </label>
+
+          <div class="trigger">
+<a class="page-link" href="/jekyll-theme-yat/about.html">ABOUT</a><a class="page-link" href="/jekyll-theme-yat/archives.html">ARCHIVES</a><a class="page-link" href="/jekyll-theme-yat/categories.html">CATEGORIES</a><a class="page-link" href="/jekyll-theme-yat/">HOME</a><a class="page-link" href="/jekyll-theme-yat/tags.html">TAGS</a>
+
+
+
+
+
+
+
+
+
+<span class="page-link">
+
+
+
+<div id="google_translate_element" style="display: none;">
+</div>
+
+<span class="ct-language">
+  <ul class="list-unstyled ct-language-dropdown">
+    
+      <li>
+        <a href="#" class="lang-select" data-lang="en">
+          
+          <img src="https://cdn.countryflags.com/thumbs/united-states-of-america/flag-400.png" title="English">
+          
+        </a>
+      </li>
+    
+      <li>
+        <a href="#" class="lang-select" data-lang="fr">
+          
+          <img src="https://cdn.countryflags.com/thumbs/france/flag-400.png" title="French">
+          
+        </a>
+      </li>
+    
+      <li>
+        <a href="#" class="lang-select" data-lang="zh-CN">
+          
+          <img src="https://cdn.countryflags.com/thumbs/china/flag-400.png" title="Chinese(Simple)">
+          
+        </a>
+      </li>
+    
+      <li>
+        <a href="#" class="lang-select" data-lang="ja">
+          
+          <img src="https://cdn.countryflags.com/thumbs/japan/flag-400.png" title="Japanese">
+          
+        </a>
+      </li>
+    
+      <li>
+        <a href="#" class="lang-select" data-lang="ko">
+          
+          <img src="https://cdn.countryflags.com/thumbs/south-korea/flag-400.png" title="Korean">
+          
+        </a>
+      </li>
+    
+      <li>
+        <a href="#" class="lang-select" data-lang="ru">
+          
+          <img src="https://cdn.countryflags.com/thumbs/russia/flag-400.png" title="Russian">
+          
+        </a>
+      </li>
+    
+  </ul>
+</span>
+
+<script type="text/javascript">
+function googleTranslateElementInit() {
+  new google.translate.TranslateElement({
+    pageLanguage: 'en',
+    autoDisplay: false,
+    layout: google.translate.TranslateElement.InlineLayout.VERTICAL
+  }, 'google_translate_element');
+
+  // Links to cross-origin destinations are unsafe
+  var gll = document.getElementsByClassName('goog-logo-link')[0];
+  if (gll) {
+    gll.setAttribute('rel', 'noopener');
+  }
+
+  function restoreLang() {
+    var iframe = document.getElementsByClassName('goog-te-banner-frame')[0];
+    if (!iframe) return;
+
+    var innerDoc = iframe.contentDocument || iframe.contentWindow.document;
+    var restore_el = innerDoc.getElementsByTagName("button");
+
+    for (var i = 0; i < restore_el.length; i++) {
+      if (restore_el[i].id.indexOf("restore") >= 0) {
+        restore_el[i].click();
+        var close_el = innerDoc.getElementsByClassName("goog-close-link");
+        close_el[0].click();
+        return;
+      }
+    }
+  }
+
+  function triggerHtmlEvent(element, eventName) {
+    var event;
+    if (document.createEvent) {
+      event = document.createEvent('HTMLEvents');
+      event.initEvent(eventName, true, true);
+      element.dispatchEvent(event);
+    } else {
+      event = document.createEventObject();
+      event.eventType = eventName;
+      element.fireEvent('on' + event.eventType, event);
+    }
+  }
+
+  var googleCombo = document.querySelector("select.goog-te-combo");
+  var langSelect = document.querySelector('.ct-language');
+  langSelect.addEventListener('click', function(event) {
+    if (!event.target) {
+      return;
+    }
+
+    var selected = document.querySelector('.ct-language .ct-language-selected');
+    if (selected) {
+      selected.classList.remove('ct-language-selected');
+    }
+
+    var target = event.target;
+    while (target && target !== langSelect ) {
+      if (target.matches('.lang-select')) {
+        break;
+      }
+      target = target.parentElement;
+    }
+
+    if (target && target.matches('.lang-select')) {
+      var lang = target.getAttribute('data-lang');
+      if (googleCombo.value == lang) {
+        restoreLang();
+      } else {
+        target.parentElement.classList.add('ct-language-selected');
+        googleCombo.value = lang;
+        triggerHtmlEvent(googleCombo, 'change');
+      }
+    }
+
+    event.preventDefault();
+  });
+}
+</script>
+
+<script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+</span>
+</div>
+        </nav>
+</div>
+  </div>
+</header>
+
+<script>
+  function initHeader() {
+    var lastScrollY = getScrollPos().y;
+    var documentElement = document.documentElement;
+
+    function storeScrollData() {
+      var y = getScrollPos().y;var scrollStatus = "";
+
+      if (y <= 0) {
+        scrollStatus = "top";
+      } else if ((window.innerHeight + y) >= document.body.offsetHeight) {
+        scrollStatus = "bottom";
+      } else {
+        var isScrollDown = (y - lastScrollY > 0) ? true : false;
+        scrollStatus = isScrollDown ? "down" : "up";
+      }
+
+      lastScrollY = y;
+      documentElement.setAttribute("data-scroll-status", scrollStatus);
+    }
+
+    window.addEventListener('scroll', function(e) {
+      storeScrollData();
+    });
+
+    storeScrollData();
+  }
+  document.addEventListener('DOMContentLoaded', initHeader);
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+  function hashLocate(hashValue) {
+    hashValue = hashValue.replace(/^.*#h-/, '');
+    hashValue = decodeURIComponent(hashValue);
+    var element = document.getElementById(hashValue);
+
+    if (!element) {
+      return;
+    }
+
+    var header = document.querySelector('header.site-header');
+    var headerRect = header.getBoundingClientRect();
+    var headerTop = Math.floor(headerRect.top);
+    var headerHeight = Math.floor(headerRect.height);
+    var scrollPos = getScrollPos();
+    var offsetY = element.offsetTop - (headerTop + headerHeight + 20);
+
+    if (offsetY == scrollPos.y) {
+      return;
+    }
+
+    if (headerTop == 0  && offsetY > scrollPos.y) {
+      offsetY += headerHeight + 2;
+    } else if (headerTop < 0  && offsetY < scrollPos.y) {
+      offsetY -= headerHeight - 2;
+    }
+
+    smoothScrollTo(offsetY);
+  }
+
+  // The first event occurred
+  window.addEventListener('load', function(event) {
+    if (window.location.hash) {
+      hashLocate(window.location.hash);
+    }
+  });
+
+  // The first event occurred
+  window.addEventListener('click', function(event) {
+    if (event.target.tagName.toLowerCase() == 'a') {
+      hashLocate(event.target.getAttribute('href'));
+    }
+  });
+</script>
+<div class="theme-toggle">
+  <input type="checkbox" id="theme-switch">
+  <label for="theme-switch">
+    <div class="toggle"></div>
+    <div class="names">
+      <p class="light">Light</p>
+      <p class="dark">Dark</p>
+    </div>
+  </label>
+</div>
+
+
+
+
+<script>
+  (function() {
+    var sw = document.getElementById('theme-switch');
+    var html = document.getElementsByTagName('html')[0];
+    var nightModeOption = ('auto' || 'auto').toLowerCase();
+    var storage = nightModeOption === 'manual'
+        ? localStorage
+        : sessionStorage;
+    var themeData = loadThemeData();
+
+    function saveThemeData(data) {
+      storage.setItem('theme', JSON.stringify(data));
+    }
+
+    function loadThemeData() {
+      var data = storage.getItem('theme');
+      try {
+        data = JSON.parse(data ? data : '');
+      } catch(e) {
+        data = { nightShift: undefined, autoToggleAt: 0 };
+        saveThemeData(data);
+      }
+      return data;
+    }
+
+    function handleThemeToggle(nightShift) {
+      themeData.nightShift = nightShift;
+      saveThemeData(themeData);
+      html.dataset.theme = nightShift ? 'dark' : 'light';
+      setTimeout(function() {
+        sw.checked = nightShift ? true : false;
+      }, 50);
+    }
+
+    function autoThemeToggle() {
+      // Next time point of theme toggle
+      var now = new Date();
+      var toggleAt = new Date();
+      var hours = now.getHours();
+      var nightShift = hours >= 19 || hours <=7;
+
+      if (nightShift) {
+        if (hours > 7) {
+          toggleAt.setDate(toggleAt.getDate() + 1);
+        }
+        toggleAt.setHours(7);
+      } else {
+        toggleAt.setHours(19);
+      }
+
+      toggleAt.setMinutes(0);
+      toggleAt.setSeconds(0);
+      toggleAt.setMilliseconds(0)
+
+      var delay = toggleAt.getTime() - now.getTime();
+
+      // auto toggle theme mode
+      setTimeout(function() {
+        handleThemeToggle(!nightShift);
+      }, delay);
+
+      return {
+        nightShift: nightShift,
+        toggleAt: toggleAt.getTime()
+      };
+    }
+
+    // Listen the theme toggle event
+    sw.addEventListener('change', function(event) {
+      handleThemeToggle(event.target.checked);
+    });
+
+    if (nightModeOption == 'auto') {
+      var data = autoThemeToggle();
+
+      // Toggle theme by local setting
+      if (data.toggleAt > themeData.autoToggleAt) {
+        themeData.autoToggleAt = data.toggleAt;
+        handleThemeToggle(data.nightShift);
+      } else {
+        handleThemeToggle(themeData.nightShift);
+      }
+    } else if (nightModeOption == 'manual') {
+      handleThemeToggle(themeData.nightShift);
+    } else {
+      var nightShift = themeData.nightShift;
+      if (nightShift === undefined) {
+        nightShift = nightModeOption === 'on';
+      }
+      handleThemeToggle(nightShift);
+    }
+  })();
+</script>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <div class="framework">
+  <section class="main">
+
+     <div class="post">
+  <section>
+
+
+
+
+
+
+
+
+
+<header class="post-header">
+  <h1 class="post-title p-name" itemprop="name headline">Decaton - High performance stream processing framwork based on Apache Kafka - Part 1</h1>
+  <h2 class="post-subtitle"></h2>
+
+  <p class="post-meta">
+    <time class="dt-published" datetime="2020-09-20T00:00:00+00:00" itemprop="datePublished"><i class="fa fa-calendar"></i> Sep 20, 2020
+    </time>
+
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <span class="post-reading-time left-vsplit"><i class="fa fa-clock-o"></i> About 6 mins</span>
+  </p>
+<div class="post-tags">
+<a class="post-tag" href="/jekyll-theme-yat/tags.html#stream-processing">#stream-processing</a><a class="post-tag" href="/jekyll-theme-yat/tags.html#kafka">#kafka</a><a class="post-tag" href="/jekyll-theme-yat/tags.html#decaton">#decaton</a>
+</div></header>
+<article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+    <div class="post-content e-content" itemprop="articleBody">
+
+      <h2 id="introduction">Introduction</h2>
+
+<p>Decaton은 Apache Kafka 기반의 streaming task processing 프레임워크입니다. Kafka consumer는 single thread로 동작하는데 이는 동시처리에 따라 순차처리 및 offset 관리가 어려워지면서 여러 문제가 발생하기 때문입니다. Decaton은 이를 극복하여 consumer에서 하나의 partition로부터 소비되는 record의 동시처리를 가능하게 하도록 설계되었습니다. 아래는 Decaton에서 지원하는 세가지 성질입니다.</p>
+
+<ul>
+  <li>하나의 partition으로부터 오는 record를 동시처리(multi-thread or asynchronous)</li>
+  <li>record key 별 순서처리 보장</li>
+  <li>record들이 처리되는 순서와는 상관 없이 at-least-once semantic을 보장</li>
+</ul>
+
+<p>아래 두가지 성질은 Kafka consumer에서 기본적으로 지원하는 성질인데 streaming task 처리의 계산 결과 보장 및 일관성 유지 등 데이터 정합성을 위해서 아주 중요합니다. Decaton은 위 성질을 만족하면서도 동시처리를 제공하여 보다 적은 수의 서버로도 처리 성능을 극대화할 수 있도록 하였습니다.</p>
+
+<p>Decaton은 본래 messenger app인 LINE에서 내부적으로 사용되는 라이브러리였습니다. 각 stream에서 초당 1백만개가 넘는 I/O intensive한 태스크를 처리하는 시스템에서 디자인 및 최적화되어 그 성능과 안정성을 검증 받았고, 이후 오픈소스화 한 프로젝트입니다. 이번 글에서는 Kafka consumer에서 왜 동시처리가 필요한지, Decaton은 이를 해결하기 위해서 어떻게 설계되었으며 어떤 기능을 지원하는지에 대해 알아보겠습니다.</p>
+
+<h2 id="why-concurrent-processing-in-kafka-consumer">Why Concurrent Processing in Kafka Consumer</h2>
+
+<p>Kafka consumer에서 왜 동시처리가 필요할까요? 이를 이해하기 위해서 Kafka에서 메시지를 처리하는 방식에 대해서 알아보겠습니다.</p>
+
+<p><img src="https://user-images.githubusercontent.com/31732943/154827772-f9ab1df9-991f-44cc-ae41-bd7384d998bb.png" alt="kafka-architecture-topic-partition-layout-offsets"></p>
+
+<p>Kafka는 topic을 단위로 메시지를 발행 및 저장합니다. 한 topic의 메세지들은 partition이라는 분산처리 단위로 위 그림에서와 같이 여러 partition에 나누어져서 저장되며 각 partition 내의 메시지들은 순서대로 read/write가 되는 것을 보장합니다.</p>
+
+<p>하나의 topic으로 발행되는 메시지들은 consumer group이라는 여러 consumer들의 집합에서 각각 처리합니다. 한 consumer group에서 처리할 수 있는 메시지의 양보다 producer가 생성하는 message의 양이 더 많으면 (즉, producer의 throughput이 더 높으면) 해당 메시지들은 처리가 지연되어 broker 상에 계속 쌓이게 됩니다. 이를 해결하기 위해서 consumer group에서 더 많은 메시지를 처리할 수 있도록 consumer instance를 추가할 수 있습니다. 하지만 Kafka에서는 하나의 partition을 여러 consumer에서 처리하는 것이 불가능하므로 consumer group의 최대 concurrency는 partition 개수로 한정됩니다.</p>
+
+<p><img src="https://user-images.githubusercontent.com/31732943/154827774-ec52b186-8b77-4bc9-89e5-7a80bd90e886.png" alt="consumer-group-1" style="zoom: 33%;"></p>
+
+<p><img src="https://user-images.githubusercontent.com/31732943/154827775-98931639-2320-4306-93f0-8db11f50040b.png" alt="consumer-group-2" style="zoom:30%;"></p>
+
+<p><img src="https://user-images.githubusercontent.com/31732943/154827780-0d862066-3c2a-4035-9451-e786d5698bd8.png" alt="consumer-group-3" style="zoom:37%;"></p>
+
+<p>Kafka를 활용하는 여러 사례들에서 위 전략으로도 충분히 우수한 성능을 보였습니다. 하지만 사용 중인 Kafka에서 동시처리 성능을 높여야 하는 상황에서 다음의 문제점이 있을 수 있습니다.</p>
+
+<ul>
+  <li>consumer instance를 추가하면서 (horizontal scaling) 비용이 추가로 발생하며, consumer group coordinator의 workload가 증가하고 network traffic이 더 발생할 수 있습니다. 또한 consumer instance들을 관리하는 consumer group coordinator의 부하가 증가합니다.</li>
+  <li>consumer instance의 개수를 partition 개수만큼 최대로 늘렸는데도 요구되는 성능을 충족시키지 못할 수도 있습니다. 남은 유일한 방법은 partition을 추가하는 것이지만 key based ordering이 rebalancing으로 인해 무너지고 브로커에 또 다른 부하를 발생시킵니다</li>
+  <li>consumer에서 처리하는 작업이 CPU intensive한 작업이 아니라 대기 시간을 요하는 I/O intensive 작업이라면 instance를 추가하는 것으로부터 얻는 효용이 크지 않습니다. consumer의 CPU 사용률이 높지 않은데도 instance를 추가하는 것은 리소스를 낭비하는 것입니다</li>
+</ul>
+
+<h2 id="multi-threaded-message-consumption-with-consumer">Multi-Threaded Message Consumption with Consumer</h2>
+
+<p><a href="https://www.confluent.io/blog/kafka-consumer-multi-threaded-messaging/">https://www.confluent.io/blog/kafka-consumer-multi-threaded-messaging/</a></p>
+
+<p>Kafka 엔터프라이즈 솔루션을 제공하는 Confluent 사의 블로그에서 동일한 문제를 다루고 있습니다. 마찬가지로 consumer의 single thread 모델의 한계점을 지적하고 있으며, consumption과 processing을 각각 main thread와 별도의 thread pool로 처리하는 multi thread 모델을 제안합니다.</p>
+
+<h3 id="motivation-for-a-multi-threaded-consumer-architecture">Motivation for a Multi-Threaded Consumer Architecture</h3>
+
+<p>Kafka consumer의 single thread 모델에서 발생하는 한계점은 다음과 같습니다.</p>
+
+<ol>
+  <li>slow processing을 개선하기 위해서 consumer 설정을 조정할 수 있지만 완전한 해결책이 될 수 없습니다</li>
+</ol>
+
+<p>Kafka consumer의 max.poll.interval.ms의 default 설정은 5분입니다. 이것을 초과하면 해당 consumer는 죽은 것으로 처리되어 group rebalancing이 발생합니다. 만약 consumer가 처리해야 할 task가 오랜 시간이 요구되는 task라면 다음과 같이 설정을 조정합니다.</p>
+
+<ul>
+  <li>max.poll.records을 더 낮게 설정하여 한번에 처리하는 레코드의 수를 줄입니다</li>
+  <li>max.poll.interval.ms을 더 높게 설정하여 처리 대기시간을 늘립니다.</li>
+</ul>
+
+<p>위 두가지 설정을 같이 조정하는 것을 시도할 수 있지만 가변적인 어플리케이션 환경에서 완벽한 값을 찾는 것이 매우 어렵습니다.</p>
+
+<ol>
+  <li>실패한 메시지에 대한 예외처리는 어렵고 복잡하며 또 다른 문제를 발생시킵니다</li>
+</ol>
+
+<p>예외 처리를 포함하여 메시지를 처리하는 로직은 어플리케이션 의존적입니다. 처리 도중 에러 발생 시에는 아래와 같은 방식으로 처리하는 것을 고려할 수 있습니다.</p>
+
+<ul>
+  <li>처리를 멈추고 consumer를 close 합니다 (그전에 수차례 재시도 처리를 합니다)</li>
+  <li>dead letter queue로 레코드를 보내고 다음 레코드로 넘어갑니다 (그전에 수차례 재시도 처리를 합니다)</li>
+  <li>레코드를 성공적으로 처리할 때까지 재시도 처리합니다 (영원히 재시도 할 수도 있습니다)</li>
+</ul>
+
+<p>세번째 방식 또한 어떤 어플리케이션에서는 적절한 처리 방식입니다. 하지만 max.poll.interval.ms를 초과하는 경우 consumer group에서 kickout 당하게 되고 해당 메시지는 영원히 처리되지 않을 수도 있습니다.</p>
+
+<p>multi thread 모델은 위 세가지 문제점들에 대한 개선 방안이 될 수 있습니다. 추가적인 consumer intance 없이도 처리 성능을 향상시킵니다. slow processing으로부터 오는 consumer 설정, 어렵고 복잡한 예외처리 문제로부터 자유로워질 수 있습니다.</p>
+
+<h3 id="multi-threaded-kafka-consumer">Multi-Threaded Kafka Consumer</h3>
+
+<p><img src="https://user-images.githubusercontent.com/31732943/154827784-9e5014c8-c0e2-4911-904c-8d28a38a4e35.png" alt="decoupling-consumption" style="zoom:60%;"></p>
+
+<p>multi thread 처리를 위한 naive approach로 별도의 thread pool을 통해 태스크들을 동시처리하는 방식을 생각할 수 있습니다. commit과 관련된 consumer default 설정으로 automatic offset commit으로, consumer에서 poll을 통해 여러 메시지들을 가져온 다음 thread pool에서 비동기로 처리하는 방식입니다. 이 방식에는 다음과 같은 문제점이 있습니다.</p>
+
+<ul>
+  <li>한 partition으로부터 가져온 메시지들이 병렬처리되기 때문에 메시지 처리순서가 보장되지 않습니다</li>
+  <li>특정 레코드가 처리되기 전에 offset commit이 일어납니다</li>
+</ul>
+
+<p>동시처리를 통해 single thread 모델을 개선하는 것이 목적이지만, 위 모델에서는 single thread 모델이 지원하는 parition 별 순서처리 보장과 at-least-once semantic이 지켜지지 않습니다. 이 문제를 해결하기 위해 다음과 같이 제안하고 있습니다.</p>
+
+<h4 id="ensuring-processing-order-guarantees">Ensuring processing order guarantees</h4>
+
+<p>한 partition에서 가져온 레코드들은 하나의 thread에서 처리하게 합니다. 즉, 하나의 consumer에서 여러 partition으로부터 레코드들을 가져오면 이를 partition 별로 나눈 다음 각 thread에 분배합니다. 이렇게 하면 각 partition 별로는 하나의 thread에서 처리되므로 순서가 지켜집니다. 또한 thread가 한 partition의 레코드들을 모두 처리하기 전에 추가적으로 레코드들을 가져오면 순서 역전이 발생할 수 있으니 thread의 시작 및 완료 시점에 해당 partition으로부터 fetch를 중단 및 재시작합니다.</p>
+
+<h4 id="commiting-offsets">Commiting offsets</h4>
+
+<p>동시처리를 하면서 offset을 관리하기 위해서는 Kafka consumer의 default 설정인 automatic offset commit은 off 해야합니다. 개별 thread에 할당된 한 partition의 레코드들이 언제 처리되었는지 main thread는 알 수 없기 때문입니다. 대신 thread에서 작업이 완료되면 완료 offset을 남기고 백그라운드에서 대상 partition에 commit 하도록 합니다.</p>
+
+<h4 id="handling-group-rebalances">Handling group rebalances</h4>
+
+<p>consumer 내에서 여러 partition에 대한 동시처리를 하고 있을 때 consumer group rebalancing이 발생할 수 있습니다. 이때 특정 partition이 다른 consumer에 할당되면서 레코드가 중복처리 될 수 있습니다. 이는 rebalancing 대상인 partition의 레코드들이 모두 처리되고 commit이 완료되었는지를 확인함으로써 해결할 수 있습니다. consumer subscribe 시 ConsumerRebalanceListener를 등록하여 rebalancing이 발생했을 때 위와 같이 처리할 수 있도록 합니다.</p>
+
+<h2 id="limitation">Limitation</h2>
+
+<p>위 모델에도 한계점은 있습니다. 한 consumer에서 여러 partition을 처리할 수 있도록 하여 병렬성은 높였지만 여전히 한 partition의 메시지들을 동시에 처리하지는 못합니다. 운영 상의 이유로 partition 개수를 더 추가하기 어렵거나 특정 partition에서만 레코드가 지나치게 발행되는 등의 상황이 여전히 문제로 남아있습니다.</p>
+
+<p>결국 한 partition의 레코드들을 동시에 처리할 수 있어야합니다. 즉, partition-level parallelism 보다 더 높은 수준의 parallelism이 필요합니다.</p>
+
+<h2 id="references">References</h2>
+
+<ul>
+  <li>Kafka
+    <ul>
+      <li><a href="https://kafka.apache.org">https://kafka.apache.org</a></li>
+      <li><a href="https://dzone.com/articles/kafka-topic-architecture-replication-failover-and">https://dzone.com/articles/kafka-topic-architecture-replication-failover-and</a></li>
+    </ul>
+  </li>
+  <li>Decaton GitHub
+    <ul>
+      <li><a href="https://github.com/line/decaton">https://github.com/line/decaton</a></li>
+      <li><a href="https://github.com/line/decaton/blob/master/docs/why-decaton.adoc">https://github.com/line/decaton/blob/master/docs/why-decaton.adoc</a></li>
+    </ul>
+  </li>
+  <li>Conflent Kafka
+    <ul>
+      <li><a href="https://www.confluent.io/blog/kafka-consumer-multi-threaded-messaging/">https://www.confluent.io/blog/kafka-consumer-multi-threaded-messaging/</a></li>
+      <li><a href="https://www.confluent.io/blog/introducing-confluent-parallel-message-processing-client/">https://www.confluent.io/blog/introducing-confluent-parallel-message-processing-client/</a></li>
+      <li><a href="https://www.confluent.io/blog/how-choose-number-topics-partitions-kafka-cluster/">https://www.confluent.io/blog/how-choose-number-topics-partitions-kafka-cluster/</a></li>
+    </ul>
+  </li>
+  <li>LINE Engineering Blog
+    <ul>
+      <li><a href="https://engineering.linecorp.com/ko/blog/how-to-use-kafka-in-line-1/">https://engineering.linecorp.com/ko/blog/how-to-use-kafka-in-line-1/</a></li>
+      <li><a href="https://engineering.linecorp.com/ko/blog/how-to-use-kafka-in-line-2/">https://engineering.linecorp.com/ko/blog/how-to-use-kafka-in-line-2/</a></li>
+      <li><a href="https://engineering.linecorp.com/ko/blog/how-to-use-kafka-in-line-3/">https://engineering.linecorp.com/ko/blog/how-to-use-kafka-in-line-3/</a></li>
+      <li><a href="https://engineering.linecorp.com/ko/blog/decaton-case-studies/">https://engineering.linecorp.com/ko/blog/decaton-case-studies/</a></li>
+      <li><a href="https://speakerdeck.com/line_devday2020/decaton-high-performance-task-processing-with-kafka?slide=16">https://speakerdeck.com/line_devday2020/decaton-high-performance-task-processing-with-kafka?slide=16</a></li>
+    </ul>
+  </li>
+</ul>
+
+
+
+    </div>
+
+</article>
+<div class="post-nav">
+<a class="previous" href="/jekyll-theme-yat/distributed-systems/2020/08/23/paper-review-the-google-file-system-2.html" title="(Paper Review) The Google File System - Part 2">(Paper Review) The Google File System...</a><a class="next" href="/jekyll-theme-yat/stream-processing/2020/09/23/decaton-02.html" title="Decaton - High performance stream processing framwork based on Apache Kafka - Part 2">Decaton - High performance stream processing...</a>
+</div>
+<div class="post-related">
+      <div>Related Articles</div>
+      <ul>
+        <li><a class="post-link" href="/jekyll-theme-yat/network/2020/06/07/flow-control-across-network-layers.html" title="Decaton - High performance stream processing framwork based on Apache Kafka - Part 2">Flow Control across Network Layers</a></li>
+<li><a class="post-link" href="/jekyll-theme-yat/database/2023/04/15/clickhouse-materialized-views.html" title="Decaton - High performance stream processing framwork based on Apache Kafka - Part 2">Clickhouse - Materialized View</a></li>
+<li><a class="post-link" href="/jekyll-theme-yat/database/2023/04/01/clickhouse-internal.html" title="Decaton - High performance stream processing framwork based on Apache Kafka - Part 2">Clickhouse - Internal</a></li>
+<li><a class="post-link" href="/jekyll-theme-yat/distributed-systems/2020/08/23/paper-review-the-google-file-system-2.html" title="Decaton - High performance stream processing framwork based on Apache Kafka - Part 2">(Paper Review) The Google File System - Part 2</a></li>
+</ul>
+    </div>
+<div class="post-comments"></div></section>
+</div>
+
+
+  </section>
+  <section class="sidebar" style="margin-left: 15px;">
+    <!-- Get sidebar items --><style type="text/css" media="screen">
+.post-menu ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+</style>
+
+<div class="post-menu">
+  <div class="post-menu-title">TOC</div>
+  <div class="post-menu-content"></div>
+</div>
+
+<script>
+  function generateContent() {
+    var menu = document.querySelector(".post-menu");
+    var menuContent =  menu.querySelector(".post-menu-content");
+    var headings = document.querySelector(".post-content").querySelectorAll("h2, h3, h4, h5, h6");
+
+    // Hide menu when no headings
+    if (headings.length === 0) {
+      return menu.style.display = "none";
+    }
+
+    // Generate post menu
+    var menuHTML = '';
+    for (var i = 0; i < headings.length; i++) {
+      var h = headings[i];
+      menuHTML += (
+        '<li class="h-' + h.tagName.toLowerCase() + '">'
+        + '<a href="#h-' + h.getAttribute('id') + '">' + h.textContent + '</a></li>');
+    }
+
+    menuContent.innerHTML = '<ul>' + menuHTML + '</ul>';
+
+    // The header element
+    var header = document.querySelector('header.site-header');
+
+    function doMenuCollapse(index, over_items) {
+      var items = menuContent.firstChild.children;
+
+      if (over_items == undefined) {
+        over_items = 20;
+      }
+
+      if (items.length < over_items) {
+        return;
+      }
+
+      var activeItem = items[index];
+      var beginItem = activeItem
+      var endItem = activeItem
+      var beginIndex = index;
+      var endIndex = index + 1;
+      while (beginIndex >= 0
+        && !items[beginIndex].classList.contains('h-h2')) {
+        beginIndex -= 1;
+      }
+      while (endIndex < items.length
+        && !items[endIndex].classList.contains('h-h2')) {
+        endIndex += 1;
+      }
+      for (var i = 0; i < beginIndex; i++) {
+        item = items[i]
+        if (!item.classList.contains('h-h2')) {
+          item.style.display = 'none';
+        }
+      }
+      for (var i = beginIndex + 1; i < endIndex; i++) {
+        item = items[i]
+        // if (!item.classList.contains('h-h2')) {
+          item.style.display = '';
+        // }
+      }
+      for (var i = endIndex; i < items.length; i++) {
+        item = items[i]
+        if (!item.classList.contains('h-h2')) {
+          item.style.display = 'none';
+        }
+      }
+    }
+
+    // Init menu collapsed
+    doMenuCollapse(-1);
+
+    // Active the menu item
+    window.addEventListener('scroll', function (event) {
+      var lastActive = menuContent.querySelector('.active');
+      var changed = true;
+      var activeIndex = -1;
+      for (var i = headings.length - 1; i >= 0; i--) {
+        var h = headings[i];
+        var headingRect = h.getBoundingClientRect();
+        var headerRect = header.getBoundingClientRect();
+        var headerTop = Math.floor(headerRect.top);
+        var headerHeight = Math.floor(headerRect.height);
+        var headerHeight = headerTop + headerHeight + 20;
+        if (headingRect.top <= headerHeight) {
+          var id = 'h-' + h.getAttribute('id');
+          var a = menuContent.querySelector('a[href="#' + id  + '"]');
+          var curActive = a.parentNode;
+          if (curActive) {
+            curActive.classList.add('active');
+            activeIndex = i;
+          }
+          if (lastActive == curActive) {
+            changed = false;
+          }
+          break;
+        }
+      }
+      if (changed) {
+        if (lastActive) {
+          lastActive.classList.remove('active');
+        }
+        doMenuCollapse(activeIndex);
+      }
+      event.preventDefault();
+    });
+  }
+  generateContent();
+</script>
+</section>
+</div>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/jekyll-theme-yat/"></data>
+
+  <div class="wrapper">
+    <div class="site-footer-inner">
+<div>Unpublished Work <span class="copyleft">©</span> 2017-2024 TaeHyeok Jang</div>
+      <div>Powered by <a title="Jekyll is a simple, blog-aware, static site
+      generator." href="http://jekyllrb.com/">Jekyll</a> &amp; <a title="Yat, yet
+      another theme." href="https://github.com/jeffreytse/jekyll-theme-yat">Yat Theme</a>.</div>
+      <div class="footer-col rss-subscribe">Subscribe <a href="/jekyll-theme-yat/feed.xml">via RSS</a>
+</div>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

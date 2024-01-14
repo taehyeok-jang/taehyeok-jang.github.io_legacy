@@ -1,0 +1,1395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="google-translate-customization" content="108d9124921d80c3-80e20d618ff053c8-g4f02ec6f3dba68b7-c">
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Clickhouse - Internal | Keep Calm and HAKUNA MATATA</title>
+<meta name="generator" content="Jekyll v4.3.3">
+<meta property="og:title" content="Clickhouse - Internal">
+<meta name="author" content="taehyeok-jang">
+<meta property="og:locale" content="en_US">
+<meta name="description" content="Introduction">
+<meta property="og:description" content="Introduction">
+<link rel="canonical" href="/jekyll-theme-yat/database/2023/04/01/clickhouse-internal.html">
+<meta property="og:url" content="/jekyll-theme-yat/database/2023/04/01/clickhouse-internal.html">
+<meta property="og:site_name" content="Keep Calm and HAKUNA MATATA">
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2023-04-01T00:00:00+00:00">
+<meta name="twitter:card" content="summary">
+<meta property="twitter:title" content="Clickhouse - Internal">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"taehyeok-jang"},"dateModified":"2023-04-01T00:00:00+00:00","datePublished":"2023-04-01T00:00:00+00:00","description":"Introduction","headline":"Clickhouse - Internal","mainEntityOfPage":{"@type":"WebPage","@id":"/jekyll-theme-yat/database/2023/04/01/clickhouse-internal.html"},"url":"/jekyll-theme-yat/database/2023/04/01/clickhouse-internal.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="shortcut icon" href="">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-noto-sans@0.0.72/index.min.css">
+  <link rel="stylesheet" href="/jekyll-theme-yat/assets/css/main.css">
+  <script src="/jekyll-theme-yat/assets/js/main.js"></script><link type="application/atom+xml" rel="alternate" href="/jekyll-theme-yat/feed.xml" title="Keep Calm and HAKUNA MATATA">
+<script>
+  function initGoogleAnalytics() {
+    var doNotTrack = (window.doNotTrack === "1" || navigator.doNotTrack === "1" ||
+      navigator.doNotTrack === "yes" || navigator.msDoNotTrack === "1");
+    var enableDNT = "true" == "true";
+
+    if (!enableDNT || !doNotTrack) {
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'G-WWZ625TGVC', 'auto');
+      ga('send', 'pageview');
+    }
+  }
+  window.addEventListener("load", initGoogleAnalytics);
+</script>
+
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/default.min.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js"></script>
+<!-- and it's easy to individually load additional languages -->
+<script charset="UTF-8" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/languages/go.min.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+// Init highlight js
+document.addEventListener('DOMContentLoaded', function(event) {
+  var els = document.querySelectorAll('pre code')
+
+  function addLangData(block) {
+    var outer = block.parentElement.parentElement.parentElement;
+    var lang = block.getAttribute('data-lang');
+    for (var i = 0; i < outer.classList.length; i++) {
+      var cls = outer.classList[i];
+      if (cls.startsWith('language-')) {
+        lang = cls;
+        break;
+      }
+    }
+    if (!lang) {
+      cls = block.getAttribute('class');
+      lang = cls ? cls.replace('hljs ', '') : '';
+    }
+    if (lang.startsWith('language-')) {
+      lang = lang.substr(9);
+    }
+    block.setAttribute('class', 'hljs ' + lang);
+    block.parentNode.setAttribute('data-lang', lang);
+  }
+
+  function addBadge(block) {
+    var enabled = ('true' || 'true').toLowerCase();
+    if (enabled == 'true') {
+      var pre = block.parentElement;
+      pre.classList.add('badge');
+    }
+  }
+
+  function handle(block) {
+    addLangData(block);
+    addBadge(block)
+    hljs.highlightBlock(block);
+  }
+
+  for (var i = 0; i < els.length; i++) {
+    var el = els[i];
+    handle(el);
+  }
+});
+</script>
+
+<style>
+  /* code language badge */
+  pre.badge::before {
+    content: attr(data-lang);
+    color: #fff;
+    background-color: #ff4e00;
+    padding: 0 .5em;
+    border-radius: 0 2px;
+    text-transform: uppercase;
+    text-align: center;
+    min-width: 32px;
+    display: inline-block;
+    position: absolute;
+    right: 0;
+  }
+
+  /* fix wrong badge display for firefox browser */
+  code > table pre::before {
+    display: none;
+  }
+</style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<header class="site-header " role="banner">
+
+  <div class="wrapper">
+    <div class="site-header-inner">
+<span class="site-brand"><a class="site-brand-inner" rel="author" href="/jekyll-theme-yat/">
+  <img class="site-favicon" title="Keep Calm and HAKUNA MATATA" src="" onerror="this.style.display='none'">
+  Keep Calm and HAKUNA MATATA
+</a>
+</span><nav class="site-nav">
+          <input type="checkbox" id="nav-trigger" class="nav-trigger">
+          <label for="nav-trigger">
+            <span class="menu-icon">
+              <svg viewbox="0 0 18 15" width="18px" height="15px">
+                <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"></path>
+              </svg>
+            </span>
+          </label>
+
+          <div class="trigger">
+<a class="page-link" href="/jekyll-theme-yat/about.html">ABOUT</a><a class="page-link" href="/jekyll-theme-yat/archives.html">ARCHIVES</a><a class="page-link" href="/jekyll-theme-yat/categories.html">CATEGORIES</a><a class="page-link" href="/jekyll-theme-yat/">HOME</a><a class="page-link" href="/jekyll-theme-yat/tags.html">TAGS</a>
+
+
+
+
+
+
+
+
+
+<span class="page-link">
+
+
+
+<div id="google_translate_element" style="display: none;">
+</div>
+
+<span class="ct-language">
+  <ul class="list-unstyled ct-language-dropdown">
+    
+      <li>
+        <a href="#" class="lang-select" data-lang="en">
+          
+          <img src="https://cdn.countryflags.com/thumbs/united-states-of-america/flag-400.png" title="English">
+          
+        </a>
+      </li>
+    
+      <li>
+        <a href="#" class="lang-select" data-lang="fr">
+          
+          <img src="https://cdn.countryflags.com/thumbs/france/flag-400.png" title="French">
+          
+        </a>
+      </li>
+    
+      <li>
+        <a href="#" class="lang-select" data-lang="zh-CN">
+          
+          <img src="https://cdn.countryflags.com/thumbs/china/flag-400.png" title="Chinese(Simple)">
+          
+        </a>
+      </li>
+    
+      <li>
+        <a href="#" class="lang-select" data-lang="ja">
+          
+          <img src="https://cdn.countryflags.com/thumbs/japan/flag-400.png" title="Japanese">
+          
+        </a>
+      </li>
+    
+      <li>
+        <a href="#" class="lang-select" data-lang="ko">
+          
+          <img src="https://cdn.countryflags.com/thumbs/south-korea/flag-400.png" title="Korean">
+          
+        </a>
+      </li>
+    
+      <li>
+        <a href="#" class="lang-select" data-lang="ru">
+          
+          <img src="https://cdn.countryflags.com/thumbs/russia/flag-400.png" title="Russian">
+          
+        </a>
+      </li>
+    
+  </ul>
+</span>
+
+<script type="text/javascript">
+function googleTranslateElementInit() {
+  new google.translate.TranslateElement({
+    pageLanguage: 'en',
+    autoDisplay: false,
+    layout: google.translate.TranslateElement.InlineLayout.VERTICAL
+  }, 'google_translate_element');
+
+  // Links to cross-origin destinations are unsafe
+  var gll = document.getElementsByClassName('goog-logo-link')[0];
+  if (gll) {
+    gll.setAttribute('rel', 'noopener');
+  }
+
+  function restoreLang() {
+    var iframe = document.getElementsByClassName('goog-te-banner-frame')[0];
+    if (!iframe) return;
+
+    var innerDoc = iframe.contentDocument || iframe.contentWindow.document;
+    var restore_el = innerDoc.getElementsByTagName("button");
+
+    for (var i = 0; i < restore_el.length; i++) {
+      if (restore_el[i].id.indexOf("restore") >= 0) {
+        restore_el[i].click();
+        var close_el = innerDoc.getElementsByClassName("goog-close-link");
+        close_el[0].click();
+        return;
+      }
+    }
+  }
+
+  function triggerHtmlEvent(element, eventName) {
+    var event;
+    if (document.createEvent) {
+      event = document.createEvent('HTMLEvents');
+      event.initEvent(eventName, true, true);
+      element.dispatchEvent(event);
+    } else {
+      event = document.createEventObject();
+      event.eventType = eventName;
+      element.fireEvent('on' + event.eventType, event);
+    }
+  }
+
+  var googleCombo = document.querySelector("select.goog-te-combo");
+  var langSelect = document.querySelector('.ct-language');
+  langSelect.addEventListener('click', function(event) {
+    if (!event.target) {
+      return;
+    }
+
+    var selected = document.querySelector('.ct-language .ct-language-selected');
+    if (selected) {
+      selected.classList.remove('ct-language-selected');
+    }
+
+    var target = event.target;
+    while (target && target !== langSelect ) {
+      if (target.matches('.lang-select')) {
+        break;
+      }
+      target = target.parentElement;
+    }
+
+    if (target && target.matches('.lang-select')) {
+      var lang = target.getAttribute('data-lang');
+      if (googleCombo.value == lang) {
+        restoreLang();
+      } else {
+        target.parentElement.classList.add('ct-language-selected');
+        googleCombo.value = lang;
+        triggerHtmlEvent(googleCombo, 'change');
+      }
+    }
+
+    event.preventDefault();
+  });
+}
+</script>
+
+<script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+</span>
+</div>
+        </nav>
+</div>
+  </div>
+</header>
+
+<script>
+  function initHeader() {
+    var lastScrollY = getScrollPos().y;
+    var documentElement = document.documentElement;
+
+    function storeScrollData() {
+      var y = getScrollPos().y;var scrollStatus = "";
+
+      if (y <= 0) {
+        scrollStatus = "top";
+      } else if ((window.innerHeight + y) >= document.body.offsetHeight) {
+        scrollStatus = "bottom";
+      } else {
+        var isScrollDown = (y - lastScrollY > 0) ? true : false;
+        scrollStatus = isScrollDown ? "down" : "up";
+      }
+
+      lastScrollY = y;
+      documentElement.setAttribute("data-scroll-status", scrollStatus);
+    }
+
+    window.addEventListener('scroll', function(e) {
+      storeScrollData();
+    });
+
+    storeScrollData();
+  }
+  document.addEventListener('DOMContentLoaded', initHeader);
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+  function hashLocate(hashValue) {
+    hashValue = hashValue.replace(/^.*#h-/, '');
+    hashValue = decodeURIComponent(hashValue);
+    var element = document.getElementById(hashValue);
+
+    if (!element) {
+      return;
+    }
+
+    var header = document.querySelector('header.site-header');
+    var headerRect = header.getBoundingClientRect();
+    var headerTop = Math.floor(headerRect.top);
+    var headerHeight = Math.floor(headerRect.height);
+    var scrollPos = getScrollPos();
+    var offsetY = element.offsetTop - (headerTop + headerHeight + 20);
+
+    if (offsetY == scrollPos.y) {
+      return;
+    }
+
+    if (headerTop == 0  && offsetY > scrollPos.y) {
+      offsetY += headerHeight + 2;
+    } else if (headerTop < 0  && offsetY < scrollPos.y) {
+      offsetY -= headerHeight - 2;
+    }
+
+    smoothScrollTo(offsetY);
+  }
+
+  // The first event occurred
+  window.addEventListener('load', function(event) {
+    if (window.location.hash) {
+      hashLocate(window.location.hash);
+    }
+  });
+
+  // The first event occurred
+  window.addEventListener('click', function(event) {
+    if (event.target.tagName.toLowerCase() == 'a') {
+      hashLocate(event.target.getAttribute('href'));
+    }
+  });
+</script>
+<div class="theme-toggle">
+  <input type="checkbox" id="theme-switch">
+  <label for="theme-switch">
+    <div class="toggle"></div>
+    <div class="names">
+      <p class="light">Light</p>
+      <p class="dark">Dark</p>
+    </div>
+  </label>
+</div>
+
+
+
+
+<script>
+  (function() {
+    var sw = document.getElementById('theme-switch');
+    var html = document.getElementsByTagName('html')[0];
+    var nightModeOption = ('auto' || 'auto').toLowerCase();
+    var storage = nightModeOption === 'manual'
+        ? localStorage
+        : sessionStorage;
+    var themeData = loadThemeData();
+
+    function saveThemeData(data) {
+      storage.setItem('theme', JSON.stringify(data));
+    }
+
+    function loadThemeData() {
+      var data = storage.getItem('theme');
+      try {
+        data = JSON.parse(data ? data : '');
+      } catch(e) {
+        data = { nightShift: undefined, autoToggleAt: 0 };
+        saveThemeData(data);
+      }
+      return data;
+    }
+
+    function handleThemeToggle(nightShift) {
+      themeData.nightShift = nightShift;
+      saveThemeData(themeData);
+      html.dataset.theme = nightShift ? 'dark' : 'light';
+      setTimeout(function() {
+        sw.checked = nightShift ? true : false;
+      }, 50);
+    }
+
+    function autoThemeToggle() {
+      // Next time point of theme toggle
+      var now = new Date();
+      var toggleAt = new Date();
+      var hours = now.getHours();
+      var nightShift = hours >= 19 || hours <=7;
+
+      if (nightShift) {
+        if (hours > 7) {
+          toggleAt.setDate(toggleAt.getDate() + 1);
+        }
+        toggleAt.setHours(7);
+      } else {
+        toggleAt.setHours(19);
+      }
+
+      toggleAt.setMinutes(0);
+      toggleAt.setSeconds(0);
+      toggleAt.setMilliseconds(0)
+
+      var delay = toggleAt.getTime() - now.getTime();
+
+      // auto toggle theme mode
+      setTimeout(function() {
+        handleThemeToggle(!nightShift);
+      }, delay);
+
+      return {
+        nightShift: nightShift,
+        toggleAt: toggleAt.getTime()
+      };
+    }
+
+    // Listen the theme toggle event
+    sw.addEventListener('change', function(event) {
+      handleThemeToggle(event.target.checked);
+    });
+
+    if (nightModeOption == 'auto') {
+      var data = autoThemeToggle();
+
+      // Toggle theme by local setting
+      if (data.toggleAt > themeData.autoToggleAt) {
+        themeData.autoToggleAt = data.toggleAt;
+        handleThemeToggle(data.nightShift);
+      } else {
+        handleThemeToggle(themeData.nightShift);
+      }
+    } else if (nightModeOption == 'manual') {
+      handleThemeToggle(themeData.nightShift);
+    } else {
+      var nightShift = themeData.nightShift;
+      if (nightShift === undefined) {
+        nightShift = nightModeOption === 'on';
+      }
+      handleThemeToggle(nightShift);
+    }
+  })();
+</script>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <div class="framework">
+  <section class="main">
+
+     <div class="post">
+  <section>
+
+
+
+
+
+
+
+
+
+<header class="post-header">
+  <h1 class="post-title p-name" itemprop="name headline">Clickhouse - Internal</h1>
+  <h2 class="post-subtitle"></h2>
+
+  <p class="post-meta">
+    <time class="dt-published" datetime="2023-04-01T00:00:00+00:00" itemprop="datePublished"><i class="fa fa-calendar"></i> Apr 01, 2023
+    </time>
+
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <span class="post-reading-time left-vsplit"><i class="fa fa-clock-o"></i> About 11 mins</span>
+  </p>
+<div class="post-tags">
+<a class="post-tag" href="/jekyll-theme-yat/tags.html#clickhouse">#clickhouse</a><a class="post-tag" href="/jekyll-theme-yat/tags.html#internal">#internal</a>
+</div></header>
+<article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+    <div class="post-content e-content" itemprop="articleBody">
+
+      <h2 id="introduction">Introduction</h2>
+
+<p>ClickHouse is an open source column-oriented distributed OLAP database, also refered as a SQL data warehouse.</p>
+
+<ul>
+  <li>Open source
+    <ul>
+      <li>Since 2009, 22K+ GitHub stars, 900+ contributors, 300+ releases</li>
+    </ul>
+  </li>
+  <li>Column-oriented
+    <ul>
+      <li>Best for aggregations</li>
+      <li>Files per column</li>
+      <li>Sorting and indexing</li>
+      <li>Background merges</li>
+    </ul>
+  </li>
+  <li>Distributed
+    <ul>
+      <li>Replication</li>
+      <li>Sharding</li>
+      <li>Multi-master</li>
+      <li>Cross-region</li>
+    </ul>
+  </li>
+  <li>OLAP
+    <ul>
+      <li>Analytics use cases</li>
+      <li>Aggregations</li>
+      <li>Visualizations</li>
+      <li>Mostly immutable data</li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="key-features">Key Features</h2>
+
+<ul>
+  <li>ANSI-compatible SQL</li>
+</ul>
+
+<p>Most SQL-compatible UIs, editors, applications, frameworks will just work!</p>
+
+<ul>
+  <li>Lots of writes</li>
+</ul>
+
+<p>Up to several million writes per second - in fact, we’ll see 2.5M writes per second later!</p>
+
+<ul>
+  <li>Distributed</li>
+</ul>
+
+<p>Replicated and sharded, largest known cluster consists of about 4,000 servers.</p>
+
+<ul>
+  <li>Highly efficient storage</li>
+</ul>
+
+<p>Lots of encoding and compression options - we’ll see 20x compression later.</p>
+
+<ul>
+  <li>Very fast queries</li>
+</ul>
+
+<p>Scan and process even billions of rows per second and use vectorized query execution.</p>
+
+<ul>
+  <li>Joins and lookups</li>
+</ul>
+
+<p>Allows separating fact and dimension tables in a star schema.</p>
+
+<h2 id="architecture">Architecture</h2>
+
+<p><img width="1322" alt="clickhouse-getting_started_with_03" src="https://github.com/taehyeok-jang/taehyeok-jang.github.io/assets/31732943/8aa03a01-9a69-494c-b4ba-41bc2f1db4ad"></p>
+
+<ul>
+  <li>Distributed mode</li>
+</ul>
+
+<p>ClickHouse supports both shard and replication across a distributed cluster.</p>
+
+<ul>
+  <li>Coordination</li>
+</ul>
+
+<p>ClickHouse Keeper provides the coordination system for data replication and distributed DDL queries execution. ClickHouse Keeper is compatible with ZooKeeper.
+ClickHouse Keeper uses the RAFT algorithm implementation, similar to Kafka broker’s RAFT implementation.</p>
+
+<p>&lt;-&gt;
+Unlike ClickHouse, Apache HBase and Google BigTable has a master server that coordinates a whole cluster.</p>
+
+<p>The master is responsible for,</p>
+<ul>
+  <li>assigning tablets to tablet servers,</li>
+  <li>detecting the addition and expiration of tablet servers,</li>
+  <li>balancing tablet-server load,</li>
+  <li>and garbage collection of files in GFS.</li>
+  <li>In addition, it handles schema changes such as table and column family creations.</li>
+</ul>
+
+<p><img width="1322" alt="clickhouse-getting_started_with_02" src="https://github.com/taehyeok-jang/taehyeok-jang.github.io/assets/31732943/026da380-d2a3-44e6-8395-e86be03bef04"></p>
+
+<h2 id="mergetree">MergeTree</h2>
+<h3 id="table-engine">Table Engine</h3>
+<p>https://www.alibabacloud.com/blog/selecting-a-clickhouse-table-engine_597726?spm=a2c65.11461447.0.0.530e484b9y6QtJ</p>
+
+<p>ClickHouse provides about 28 table engines for different purposes. For example,</p>
+<ul>
+  <li>Log family for small table data analysis, however</li>
+  <li>MergeTree family for big-volume data analysis</li>
+  <li>Integration for external data integration.</li>
+</ul>
+
+<p>However Log, Special, and Integration are mainly used for special purposes in relatively limited scenarios. <strong>MergeTree family is the officially recommended storage engine,</strong> which supports almost all ClickHouse core functions.</p>
+
+<p>There are a wide range of MergeTree table engines including MergeTree, ReplacingMergeTree, CollapsingMergeTree, VersionedCollapsingMergeTree, SummingMergeTree, and AggregatingMergeTree,… (some supports data aggregation and deduplication)</p>
+
+<ul>
+  <li>Example</li>
+</ul>
+
+<p>We adopts ‘ReplacingMergeTree’ for internal data pipeline project.</p>
+
+<ul>
+  <li>Does MergeTree remove some rows by compacting process?</li>
+</ul>
+
+<p>Some MergeTree families such as ReplacingMergeTree, SummingMergeTree, AggregatingMergeTree does replace / sum / aggregate rows.</p>
+
+<h3 id="mergetree-as-lsm-tree">MergeTree as LSM-Tree</h3>
+
+<ul>
+  <li>LSM-Tree?</li>
+</ul>
+
+<p>=&gt; read this article! <a href="https://taehyeok-jang.github.io/database/2020/09/27/algorithms-behind-modern-storage-systems.html#h-introduction">(Paper Review) Algorithms Behind Modern Storage Systems</a></p>
+
+<p><img src="https://github.com/taehyeok-jang/taehyeok-jang.github.io/assets/31732943/af82c9e1-49c9-47db-ab42-256fb2b5efca" alt="LSM_Tree_(1)"></p>
+
+<p>MergeTree has the same core idea as LSM-Tree, to solve the performance problem of random disk writing.
+MergeTree storage structure sorts the written data first and then stores it. Orderly data storage has two core advantages:</p>
+
+<ul>
+  <li>When column-store files are compressed by blocks, the column values in the sort key are continuous or repeated, so t<strong>he column-store blocks can be compressed at an excellent data compression ratio.</strong>
+</li>
+  <li>Orderly storage <strong>is an index structure that helps accelerate queries.</strong> The approximate position interval where the target rows are can be located quickly based on the equivalence condition or range condition of the columns in the sort key.</li>
+</ul>
+
+<h3 id="mergetree-internal">MergeTree Internal</h3>
+
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">CREATE</span> <span class="k">TABLE</span> <span class="n">user_action_log</span> <span class="p">(</span>
+  <span class="nv">`time`</span> <span class="nb">DateTime</span> <span class="k">DEFAULT</span> <span class="k">CAST</span><span class="p">(</span><span class="s1">'1970-01-01 08:00:00'</span><span class="p">,</span> <span class="s1">'DateTime'</span><span class="p">)</span> <span class="k">COMMENT</span> <span class="s1">'Log time'</span><span class="p">,</span>
+  <span class="nv">`action_id`</span> <span class="n">UInt16</span> <span class="k">DEFAULT</span> <span class="k">CAST</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s1">'UInt16'</span><span class="p">)</span> <span class="k">COMMENT</span> <span class="s1">'Log behavior type id'</span><span class="p">,</span>
+  <span class="nv">`action_name`</span> <span class="n">String</span> <span class="k">DEFAULT</span> <span class="s1">''</span> <span class="k">COMMENT</span> <span class="s1">'Log behavior type name'</span><span class="p">,</span>
+  <span class="nv">`region_name`</span> <span class="n">String</span> <span class="k">DEFAULT</span> <span class="s1">''</span> <span class="k">COMMENT</span> <span class="s1">'Region name'</span><span class="p">,</span>
+  <span class="nv">`uid`</span> <span class="n">UInt64</span> <span class="k">DEFAULT</span> <span class="k">CAST</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s1">'UInt64'</span><span class="p">)</span> <span class="k">COMMENT</span> <span class="s1">'User id'</span><span class="p">,</span>
+  <span class="nv">`level`</span> <span class="n">UInt32</span> <span class="k">DEFAULT</span> <span class="k">CAST</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s1">'UInt32'</span><span class="p">)</span> <span class="k">COMMENT</span> <span class="s1">'Current level'</span><span class="p">,</span>
+  <span class="nv">`trans_no`</span> <span class="n">String</span> <span class="k">DEFAULT</span> <span class="s1">''</span> <span class="k">COMMENT</span> <span class="s1">'Transaction serial number'</span><span class="p">,</span>
+  <span class="nv">`ext_head`</span> <span class="n">String</span> <span class="k">DEFAULT</span> <span class="s1">''</span> <span class="k">COMMENT</span> <span class="s1">'Extended log head'</span><span class="p">,</span>
+  <span class="nv">`avatar_id`</span> <span class="n">UInt32</span> <span class="k">DEFAULT</span> <span class="k">CAST</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s1">'UInt32'</span><span class="p">)</span> <span class="k">COMMENT</span> <span class="s1">'Avatar id'</span><span class="p">,</span>
+  <span class="nv">`scene_id`</span> <span class="n">UInt32</span> <span class="k">DEFAULT</span> <span class="k">CAST</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s1">'UInt32'</span><span class="p">)</span> <span class="k">COMMENT</span> <span class="s1">'Scene id'</span><span class="p">,</span>
+  <span class="nv">`time_ts`</span> <span class="n">UInt64</span> <span class="k">DEFAULT</span> <span class="k">CAST</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s1">'UInt64'</span><span class="p">)</span> <span class="k">COMMENT</span> <span class="s1">'Second timestamp'</span><span class="p">,</span>
+  <span class="k">index</span> <span class="n">avatar_id_minmax</span> <span class="p">(</span><span class="n">avatar_id</span><span class="p">)</span> <span class="k">type</span> <span class="n">minmax</span> <span class="n">granularity</span> <span class="mi">3</span>
+<span class="p">)</span> <span class="n">ENGINE</span> <span class="o">=</span> <span class="n">MergeTree</span><span class="p">()</span>
+<span class="k">PARTITION</span> <span class="k">BY</span> <span class="p">(</span><span class="n">toYYYYMMDD</span><span class="p">(</span><span class="nb">time</span><span class="p">),</span> <span class="n">toHour</span><span class="p">(</span><span class="nb">time</span><span class="p">),</span> <span class="n">region_name</span><span class="p">)</span>
+<span class="k">ORDER</span> <span class="k">BY</span> <span class="p">(</span><span class="n">action_id</span><span class="p">,</span> <span class="n">scene_id</span><span class="p">,</span> <span class="n">time_ts</span><span class="p">,</span> <span class="k">level</span><span class="p">,</span> <span class="n">uid</span><span class="p">)</span>
+<span class="k">PRIMARY</span> <span class="k">KEY</span> <span class="p">(</span><span class="n">action_id</span><span class="p">,</span> <span class="n">scene_id</span><span class="p">,</span> <span class="n">time_ts</span><span class="p">,</span> <span class="k">level</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p>The following figure shows the MergeTree storage structure logic of the table:</p>
+
+<p><img src="https://github.com/taehyeok-jang/taehyeok-jang.github.io/assets/31732943/6d6d8bdf-be22-42c3-b935-64c09b87cbf2" alt="9b6058003d49ce37745344a93c5f3250ea276ba9_(1)"></p>
+
+<ul>
+  <li>Partition</li>
+</ul>
+
+<p>A single partition contains multiple MergeTree Data Parts. In the storage structure of the MergeTree table, <strong>each data partition is independent of each other with no logical connections.</strong></p>
+
+<ul>
+  <li>Data Part</li>
+</ul>
+
+<p>A new MergeTree Data Part is generated for each batch insert operation.</p>
+
+<p>Once these Data Parts are generated, they are immutable. The generation and destruction of Data Parts are mainly related <strong>to writing and asynchronous Merge (compaction).</strong></p>
+
+<h3 id="data-part">Data Part</h3>
+
+<p>Plz note that inside one data part, there are <strong>1) primary key index, 2) mark identifiers, 3) data files, 4) etc (minmax_idx, skipping index, …)</strong></p>
+
+<p><img src="https://github.com/taehyeok-jang/taehyeok-jang.github.io/assets/31732943/90bf925f-4362-4b4d-8173-9a9b0cd89b7f" alt="4d88ee03dec493f26a091508d43f5c668238bc33-2_(1)"></p>
+
+<h4 id="primary-key-index-primaryidx">Primary Key Index (primary.idx)</h4>
+
+<p>It is capable of quickly finding the primary key rows. It stores the primary key value of the start row in each Granule, while the data in MergeTree storage is strictly sorted according to the primary</p>
+
+<h4 id="mark-identifiers-column_1mrk-column_2mrk-">Mark Identifiers (column_1.mrk, column_2.mrk, …)</h4>
+
+<p>Mark identifier is related to two important concepts in MergeTree columnar storage, namely, Granule and Block.</p>
+
+<ul>
+  <li>Block</li>
+</ul>
+
+<p>Block is the compression unit for the column-store file. Each Block of a column-store file contains several Granules.</p>
+
+<p>The specific number of Granules is controlled by the ‘min_compress_block_size’ parameter. It checks whether the current Block size has reached the set value when the data in a Granule is written in a Block. If so, the current Block is compressed and then written to the disk.</p>
+
+<ul>
+  <li>Granule</li>
+</ul>
+
+<p>Granule is a logical concept to divide data by rows.</p>
+
+<p>In earlier versions, the amount of rows a Granule makes up is set by the ‘index_granularity’  parameter. It ensures that the sum size of all columns in a Granule does not exceed the specified value</p>
+
+<ul>
+  <li>Mark identifier</li>
+</ul>
+
+<p>Neither the data size nor the number of rows are fixed in the Block of MergeTree, and the Granule is not a fixed-length logical concept.</p>
+
+<p>Therefore, additional information is needed to find a Granule quickly. <strong>Mark identifier files can provide the solution.</strong> It records the number of rows of each Granule and the offset of the Block where it locates in the column-store compressed file. It also records the offset of a Granule in the decompressed Block.</p>
+
+<h4 id="data-files-column_1bin-column_2bin-">Data Files (column_1.bin, column_2.bin, …)</h4>
+
+<p>column_1.bin, column_2.bin, and others are <strong>column-store files after the single column is compressed by block.</strong></p>
+
+<p>To be more specific, a single column of data may correspond to multiple column-store files.</p>
+
+<h2 id="mergetree-query">MergeTree Query</h2>
+
+<p>It is roughly divided into two parts: index retrieval and data scanning.</p>
+
+<h3 id="index-retrieval">Index Retrieval</h3>
+
+<p>MergeTree storage extracts the KeyCondition of the partition key and the primary key in the query when receiving a select query.</p>
+
+<ol>
+  <li>prune irrelevant data partitions with the partition key KeyCondition first.</li>
+  <li>select the rough Mark Ranges using the primary key index.</li>
+  <li>filter the Mark Ranges generated by the primary key index with skipping index</li>
+</ol>
+
+<h3 id="data-scanning">Data Scanning</h3>
+
+<p>MergeTree provides three different modes for data scanning: Final Mode, Sorted Mode, <strong>Normal Mode</strong></p>
+
+<p>Data is scanned in parallel among multiple Data Parts, which can achieve very high data reading throughput for a single query.</p>
+
+<p>The following describes several key performance optimizations in the Normal mode:</p>
+
+<ul>
+  <li><strong>Parallel Scanning</strong></li>
+</ul>
+
+<p>ClickHouse adds the Mark Range parallelism feature to the MergeTree Data Part parallelism feature. Users can set the parallelism in the data scanning process at will.</p>
+
+<ul>
+  <li>Data Cache</li>
+  <li>SIMD Deserialization</li>
+  <li>PreWhere Filtering</li>
+</ul>
+
+<h2 id="materialized-view">Materialized View</h2>
+
+<p>https://clickhouse.com/docs/en/guides/developer/cascading-materialized-views</p>
+
+<h2 id="optimization">Optimization</h2>
+
+<h3 id="compression">Compression</h3>
+
+<p>The compression rate is <strong>closely co-related to which pattern and how sparse and distributed given dataset is</strong>, but basically that we can expect to achieve significant amount of raw dataset would be compressed.</p>
+
+<p>Examples.</p>
+
+<ul>
+  <li>uk_price_paid</li>
+</ul>
+
+<p>https://clickhouse.com/docs/en/getting-started/example-datasets/uk-price-paid/</p>
+
+<p>7.54GB (raw) → 299.65MB (compressed) (25.76x)</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0 rows in set. Elapsed: 848.875 sec. Processed 27.84 million rows, 7.54 GB (32.79 thousand rows/s., 8.88 MB/s.)
+=&gt; 
+
+SELECT formatReadableSize(total_bytes)
+FROM system.tables
+WHERE name = 'uk_price_paid'
+
+Query id: edc4dddc-e1b1-49fe-9505-3576222162d2
+┌─formatReadableSize(total_bytes)─┐
+│ 299.65 MiB                      │
+└─────────────────────────────────┘
+</code></pre></div></div>
+
+<ul>
+  <li>nyc_taxi</li>
+</ul>
+
+<p>https://clickhouse.com/docs/en/getting-started/example-datasets/nyc-taxi</p>
+
+<p>228.06MB (raw) → 121.23MB (compressed) (1.88x)</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0 rows in set. Elapsed: 61.972 sec. Processed 3.00 million rows, 228.06 MB (48.41 thousand rows/s., 3.68 MB/s.)
+=&gt; 
+
+┌─formatReadableSize(total_bytes)─┐
+│ 121.23 MiB                      │
+└─────────────────────────────────┘
+</code></pre></div></div>
+
+<h2 id="use-cases">Use Cases</h2>
+
+<p>https://clickhouse.com/docs/en/about-us/adopters</p>
+
+<ul>
+  <li>CloudFlare
+    <ul>
+      <li>All DNS AND HTTP logs (over 10M of rows/s)</li>
+      <li>Moved from PostgreSQL to ClickHouse</li>
+      <li>50+ servers, 120 TB per server</li>
+      <li>https://blog.cloudflare.com/log-analytics-using-clickhouse/</li>
+      <li>https://blog.cloudflare.com/http-analytics-for-6m-requests-per-second-using-clickhouse/</li>
+    </ul>
+  </li>
+  <li>Uber
+    <ul>
+      <li>Centralized logging platform</li>
+      <li>Moved from ELK to ClickHouse</li>
+      <li>80% queries are aggregations</li>
+      <li><a href="https://www.uber.com/en-KR/blog/logging/">Uber Engineering Blog - Fast and Reliable Schema-Agnostic Log Analytics Platform</a></li>
+      <li>https://presentations.clickhouse.com/meetup40/uber.pdf</li>
+    </ul>
+  </li>
+  <li>eBay
+    <ul>
+      <li>OLAP platform</li>
+      <li>Moved from Druid to ClickHouse</li>
+      <li>Reduced HW cost by over 90% - from 900 to 90 servers!</li>
+      <li><a href="https://tech.ebayinc.com/engineering/ou-online-analytical-processing/">eBay Engineering Blog - Our Online Analytical Processing Journey with ClickHouse on Kubernetes</a></li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="reference">Reference</h2>
+
+<ul>
+  <li>Apache HBase, Google BigTable
+    <ul>
+      <li><a href="https://data-flair.training/blogs/hbase-architecture/">https://data-flair.training/blogs/hbase-architecture/</a></li>
+      <li><a href="https://www.slideshare.net/quipo/nosql-databases-why-what-and-when/127-Google_BigTable_Architecture_fs_metadata">https://www.slideshare.net/quipo/nosql-databases-why-what-and-when/127-Google_BigTable_Architecture_fs_metadata</a></li>
+    </ul>
+  </li>
+  <li>ClickHouse doc
+    <ul>
+      <li><a href="https://clickhouse.com/docs/en/home/">https://clickhouse.com/docs/en/home/</a></li>
+      <li><a href="https://clickhouse.com/docs/en/faq/general/why-clickhouse-is-so-fast/">https://clickhouse.com/docs/en/faq/general/why-clickhouse-is-so-fast/</a></li>
+      <li><a href="https://www.alibabacloud.com/blog/clickhouse-kernel-analysis-storage-structure-and-query-acceleration-of-mergetree_597727">https://www.alibabacloud.com/blog/clickhouse-kernel-analysis-storage-structure-and-query-acceleration-of-mergetree_597727</a></li>
+      <li><a href="https://clickhouse.com/company/events/getting-started-with-clickhouse">https://clickhouse.com/company/events/getting-started-with-clickhouse</a></li>
+    </ul>
+  </li>
+  <li>Conferences
+    <ul>
+      <li><a href="https://www.youtube.com/watch?v=6WICfakG84c">Secrets of ClickHouse Query Performance</a></li>
+      <li><a href="https://www.youtube.com/watch?v=ZOZQCQEtrz8">The Secrets of ClickHouse Performance Optimizations at BDTC 2019</a></li>
+      <li><a href="https://www.youtube.com/watch?v=fGG9dApIhDU">Introducing ClickHouse – The Fastest Data Warehouse You’ve Never Heard Of (Robert Hodges, Altinity)</a></li>
+      <li><a href="https://www.youtube.com/watch?v=XpkFEj1rVXg">A Day in the Life of a ClickHouse Query — Intro to ClickHouse Internals ClickHouse Tutorial</a></li>
+    </ul>
+  </li>
+</ul>
+
+<h3 id="additional-ref">Additional Ref</h3>
+
+<ul>
+  <li><a href="https://clickhouse.com/docs/en/concepts/why-clickhouse-is-so-fast">https://clickhouse.com/docs/en/concepts/why-clickhouse-is-so-fast</a></li>
+  <li><a href="https://altinity.com/blog/2020/1/1/clickhouse-cost-efficiency-in-action-analyzing-500-billion-rows-on-an-intel-nuc">https://altinity.com/blog/2020/1/1/clickhouse-cost-efficiency-in-action-analyzing-500-billion-rows-on-an-intel-nuc</a></li>
+  <li><a href="http://www.cs.columbia.edu/~kar/pubsk/simd.pdf">http://www.cs.columbia.edu/~kar/pubsk/simd.pdf</a></li>
+  <li>
+    <p><a href="https://www.sciencedirect.com/topics/computer-science/single-instruction-multiple-data">https://www.sciencedirect.com/topics/computer-science/single-instruction-multiple-data</a></p>
+  </li>
+  <li>Blog
+    <ul>
+      <li><a href="https://clickhouse.com/blog/introduction-to-the-clickhouse-query-cache-and-design">https://clickhouse.com/blog/introduction-to-the-clickhouse-query-cache-and-design</a></li>
+      <li><a href="https://clickhouse.com/blog/using-ttl-to-manage-data-lifecycles-in-clickhouse">https://clickhouse.com/blog/using-ttl-to-manage-data-lifecycles-in-clickhouse</a></li>
+      <li><a href="https://clickhouse.com/blog/data-formats-clickhouse-csv-tsv-parquet-native">https://clickhouse.com/blog/data-formats-clickhouse-csv-tsv-parquet-native</a></li>
+    </ul>
+  </li>
+</ul>
+
+
+
+    </div>
+
+</article>
+<div class="post-nav">
+<a class="previous" href="/jekyll-theme-yat/stream-processing/2023/03/20/apache-kafka-skim-through-kafka-connect.html" title="Apache Kafka - Skim Through Kafka Connect">Apache Kafka - Skim Through Kafka...</a><a class="next" href="/jekyll-theme-yat/database/2023/04/15/clickhouse-materialized-views.html" title="Clickhouse - Materialized View">Clickhouse - Materialized View</a>
+</div>
+<div class="post-related">
+      <div>Related Articles</div>
+      <ul>
+        <li><a class="post-link" href="/jekyll-theme-yat/stream-processing/2020/09/20/decaton-01.html" title="Clickhouse - Materialized View">Decaton - High performance stream processing framwork based on Apache Kafka -...</a></li>
+<li><a class="post-link" href="/jekyll-theme-yat/distributed-systems/2020/08/23/paper-review-the-google-file-system-2.html" title="Clickhouse - Materialized View">(Paper Review) The Google File System - Part 2</a></li>
+<li><a class="post-link" href="/jekyll-theme-yat/database/2023/04/01/clickhouse-internal.html" title="Clickhouse - Materialized View">Clickhouse - Internal</a></li>
+<li><a class="post-link" href="/jekyll-theme-yat/stream-processing/2022/06/01/apache-kafka-troubleshoot.html" title="Clickhouse - Materialized View">Apache Kafka - Troubleshoot</a></li>
+</ul>
+    </div>
+<div class="post-comments"></div></section>
+</div>
+
+
+  </section>
+  <section class="sidebar" style="margin-left: 15px;">
+    <!-- Get sidebar items --><style type="text/css" media="screen">
+.post-menu ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+</style>
+
+<div class="post-menu">
+  <div class="post-menu-title">TOC</div>
+  <div class="post-menu-content"></div>
+</div>
+
+<script>
+  function generateContent() {
+    var menu = document.querySelector(".post-menu");
+    var menuContent =  menu.querySelector(".post-menu-content");
+    var headings = document.querySelector(".post-content").querySelectorAll("h2, h3, h4, h5, h6");
+
+    // Hide menu when no headings
+    if (headings.length === 0) {
+      return menu.style.display = "none";
+    }
+
+    // Generate post menu
+    var menuHTML = '';
+    for (var i = 0; i < headings.length; i++) {
+      var h = headings[i];
+      menuHTML += (
+        '<li class="h-' + h.tagName.toLowerCase() + '">'
+        + '<a href="#h-' + h.getAttribute('id') + '">' + h.textContent + '</a></li>');
+    }
+
+    menuContent.innerHTML = '<ul>' + menuHTML + '</ul>';
+
+    // The header element
+    var header = document.querySelector('header.site-header');
+
+    function doMenuCollapse(index, over_items) {
+      var items = menuContent.firstChild.children;
+
+      if (over_items == undefined) {
+        over_items = 20;
+      }
+
+      if (items.length < over_items) {
+        return;
+      }
+
+      var activeItem = items[index];
+      var beginItem = activeItem
+      var endItem = activeItem
+      var beginIndex = index;
+      var endIndex = index + 1;
+      while (beginIndex >= 0
+        && !items[beginIndex].classList.contains('h-h2')) {
+        beginIndex -= 1;
+      }
+      while (endIndex < items.length
+        && !items[endIndex].classList.contains('h-h2')) {
+        endIndex += 1;
+      }
+      for (var i = 0; i < beginIndex; i++) {
+        item = items[i]
+        if (!item.classList.contains('h-h2')) {
+          item.style.display = 'none';
+        }
+      }
+      for (var i = beginIndex + 1; i < endIndex; i++) {
+        item = items[i]
+        // if (!item.classList.contains('h-h2')) {
+          item.style.display = '';
+        // }
+      }
+      for (var i = endIndex; i < items.length; i++) {
+        item = items[i]
+        if (!item.classList.contains('h-h2')) {
+          item.style.display = 'none';
+        }
+      }
+    }
+
+    // Init menu collapsed
+    doMenuCollapse(-1);
+
+    // Active the menu item
+    window.addEventListener('scroll', function (event) {
+      var lastActive = menuContent.querySelector('.active');
+      var changed = true;
+      var activeIndex = -1;
+      for (var i = headings.length - 1; i >= 0; i--) {
+        var h = headings[i];
+        var headingRect = h.getBoundingClientRect();
+        var headerRect = header.getBoundingClientRect();
+        var headerTop = Math.floor(headerRect.top);
+        var headerHeight = Math.floor(headerRect.height);
+        var headerHeight = headerTop + headerHeight + 20;
+        if (headingRect.top <= headerHeight) {
+          var id = 'h-' + h.getAttribute('id');
+          var a = menuContent.querySelector('a[href="#' + id  + '"]');
+          var curActive = a.parentNode;
+          if (curActive) {
+            curActive.classList.add('active');
+            activeIndex = i;
+          }
+          if (lastActive == curActive) {
+            changed = false;
+          }
+          break;
+        }
+      }
+      if (changed) {
+        if (lastActive) {
+          lastActive.classList.remove('active');
+        }
+        doMenuCollapse(activeIndex);
+      }
+      event.preventDefault();
+    });
+  }
+  generateContent();
+</script>
+</section>
+</div>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/jekyll-theme-yat/"></data>
+
+  <div class="wrapper">
+    <div class="site-footer-inner">
+<div>Unpublished Work <span class="copyleft">©</span> 2017-2024 TaeHyeok Jang</div>
+      <div>Powered by <a title="Jekyll is a simple, blog-aware, static site
+      generator." href="http://jekyllrb.com/">Jekyll</a> &amp; <a title="Yat, yet
+      another theme." href="https://github.com/jeffreytse/jekyll-theme-yat">Yat Theme</a>.</div>
+      <div class="footer-col rss-subscribe">Subscribe <a href="/jekyll-theme-yat/feed.xml">via RSS</a>
+</div>
+    </div>
+  </div>
+</footer>
+</body>
+</html>
