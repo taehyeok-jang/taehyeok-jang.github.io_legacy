@@ -20,7 +20,7 @@ jobs:
     steps:
       # 2.
       - name: Checkout ASIS repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
         with:
           repository: ${{ github.repository }}
           ref: ${{ github.ref }}
@@ -55,6 +55,6 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           repository: ${{ env.TOBE_REPO_PATH }}
-          commit_message: "feat: migrated single post - ${{ github.event.inputs.target_dir }}"
+          commit_message: "feat: post migrate - ${{ github.event.inputs.target_dir }}"
           branch: master 
           token: ${{ secrets.PAT_FOR_TOBE }}
