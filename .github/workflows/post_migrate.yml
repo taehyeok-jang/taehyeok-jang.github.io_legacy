@@ -44,7 +44,7 @@ jobs:
 
       # 5. 
       - name: Run migrate script
-        run: python ./scripts/migrate_single.py
+        run: python ./scripts/post_migrate.py
         env:
           POST_PATH: ${{ github.event.inputs.post_path }}
           TARGET_DIR: ${{ github.event.inputs.target_dir }}
