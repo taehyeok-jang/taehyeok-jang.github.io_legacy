@@ -16,12 +16,25 @@ def call_api(prompt):
         "model": "gpt-4o",
         "messages": [{"role": "user", "content": prompt}]
     }
-    response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=data)
-    response.raise_for_status()
-    return response.json()['choices'][0]['message']['content']
+    
+    
 
-def process_file(file_path):
-    with open(file_path, 'r', encoding='utf-8') as f:
+    for attempt in range(5):
+        response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=data)
+        
+        if response.status_code == 429:
+            wait_time = 10 * (attempt + 1)
+            print(f"Rate limited. Retrying in {wait_time} seconds...")
+            time.sleep(wait_time)
+            continue
+
+        response.raise_for_status()
+        return response.json()["choices"][0]["message"]["content"]
+
+    raise Exception("Too many retries")
+
+def process_post(post_path):
+    with open(post_path, 'r', encoding='utf-8') as f:
         content = f.read()
 
     # 
@@ -40,6 +53,8 @@ def process_file(file_path):
     {content}
     """
 
+    print("prompt: \n", prompt)
+
     # 
     translated_content = call_api(prompt)
 
@@ -50,7 +65,7 @@ def process_file(file_path):
     with open(os.path.join(output_dir, 'index.md'), 'w', encoding='utf-8') as f:
         f.write(translated_content)
 
-    print(f"File processed and saved to {output_dir}")
+    print(f"Post processed and saved to {output_dir}")
 
 def main():
     if not POST_PATH or not TARGET_DIR:
@@ -58,7 +73,7 @@ def main():
         return
 
     print(f"Starting migration for post: {POST_PATH}")
-    process_file(POST_PATH)
+    process_post(POST_PATH)
 
 if __name__ == "__main__":
     main()
