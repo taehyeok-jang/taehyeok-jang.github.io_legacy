@@ -17,12 +17,14 @@ def call_api(prompt):
         "model": "gpt-4o",
         "messages": [{"role": "user", "content": prompt}]
     }
-    
-    
 
     for attempt in range(5):
+        print("attempt: ", attempt)
+
         response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=data)
         
+        print("response: ", response.status_code, response.text)
+
         if response.status_code == 429:
             wait_time = 10 * (attempt + 1)
             print(f"Rate limited. Retrying in {wait_time} seconds...")
