@@ -1,0 +1,60 @@
+name: Post Migrate
+
+# 1. manual trigger
+on:
+  workflow_dispatch:
+    inputs:
+      post_path:
+        description: 'Path to the ASIS post file (e.g., _posts/2016-08-01-map-reduce.md)'
+        required: true
+      target_dir:
+        description: 'Target directory name in TOBE repo (e.g., map-reduce)'
+        required: true
+      
+jobs:
+  migrate_single_post:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # 
+
+    steps:
+      # 2.
+      - name: Checkout ASIS repository
+        uses: actions/checkout@v5
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ github.ref }}
+
+      # 3.
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests pyyaml openai
+
+      # 4.
+      - name: Set up API Key
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: echo "OPENAI_API_KEY=${OPENAI_API_KEY}" >> $GITHUB_ENV
+
+      # 5. 
+      - name: Run migrate script
+        run: python ./scripts/migrate_single.py
+        env:
+          POST_PATH: ${{ github.event.inputs.post_path }}
+          TARGET_DIR: ${{ github.event.inputs.target_dir }}
+          TOBE_REPO_PATH: 'taehyeok-jang/taehyeok-jang.github.io'
+
+      # 6. 
+      - name: Commit and Push changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          repository: ${{ env.TOBE_REPO_PATH }}
+          commit_message: "feat: migrated single post - ${{ github.event.inputs.target_dir }}"
+          branch: master 
+          token: ${{ secrets.PAT_FOR_TOBE }}
