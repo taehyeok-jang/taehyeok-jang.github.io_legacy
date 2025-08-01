@@ -1,6 +1,7 @@
 import os
 import requests
 import yaml
+import time
 
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
 POST_PATH = os.environ.get('POST_PATH')
